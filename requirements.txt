@@ -1,0 +1,35 @@
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+
+# Data Validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Database
+sqlalchemy>=2.0.0
+aiomysql>=0.2.0
+pymysql>=1.1.0
+
+# Cache
+redis>=5.0.0
+
+# Agent Framework
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+
+# LLM - 豆包大模型 (火山引擎 Ark, OpenAI 兼容接口)
+openai>=1.0.0
+
+# Vector Database
+pymilvus>=2.4.0
+
+# HTTP Client
+httpx>=0.25.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Embedding
+sentence-transformers>=2.2.0
