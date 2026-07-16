@@ -1,9 +1,9 @@
 # 气象负反馈分析 Agent 设计文档
 
-> 版本：v1.0  
-> 作者：XXX  
-> 日期：2024-01-15  
-> 状态：设计中
+> 版本：v2.0
+> 作者：XXX
+> 日期：2026-07-16
+> 状态：已实现
 
 ---
 
@@ -38,23 +38,23 @@
 
 ### 2.1 功能需求
 
-| 需求 | 描述 | 优先级 |
-|------|------|--------|
-| 负反馈自动分析 | 自动分析用户反馈，定位问题原因 | P0 |
-| 链路自动排查 | 自动检查整个数据链路，定位问题环节 | P0 |
-| 自动回复用户 | 自动生成回复，发送给用户 | P1 |
-| 自动派单 | 根据问题类型，自动派单给对应团队 | P1 |
-| 问题预警 | 监控负反馈趋势，提前预警 | P2 |
-| 知识沉淀 | 自动积累问题库和解决方案 | P2 |
+| 需求 | 描述 | 优先级 | 状态 |
+|------|------|--------|------|
+| 负反馈自动分析 | 自动分析用户反馈，定位问题原因 | P0 | ✅ 已实现 |
+| 链路自动排查 | 自动检查整个数据链路，定位问题环节 | P0 | ✅ 已实现 |
+| 自动回复用户 | 自动生成回复，发送给用户 | P1 | ✅ 已实现 |
+| 自动派单 | 根据问题类型，自动派单给对应团队 | P1 | ❌ 待实现 |
+| 问题预警 | 监控负反馈趋势，提前预警 | P2 | ✅ 已实现 |
+| 知识沉淀 | 自动积累问题库和解决方案 | P2 | ✅ 已实现 |
 
 ### 2.2 非功能需求
 
-| 需求 | 描述 |
-|------|------|
-| 性能 | 单次分析 < 5 分钟 |
-| 可用性 | 99.9% |
-| 扩展性 | 支持新增数据产品 |
-| 安全性 | 数据脱敏、权限控制 |
+| 需求 | 描述 | 实际指标 |
+|------|------|---------|
+| 性能 | 单次分析 < 5 分钟 | 3-5 秒 |
+| 可用性 | 99.9% | - |
+| 扩展性 | 支持新增数据产品 | ✅ |
+| 安全性 | 数据脱敏、权限控制 | ✅ 信息分层 |
 
 ### 2.3 负反馈类型
 
@@ -101,8 +101,8 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              数据层                                      │
 │   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                │
-│   │ 气象数据    │    │ 预警数据    │    │ AQI 数据    │                │
-│   │ (HBase)     │    │ (MySQL)     │    │ (ClickHouse)│                │
+│   │ 气象数据    │    │ 预警数据    │    │ 知识库      │                │
+│   │ (MySQL)     │    │ (MySQL)     │    │ (Milvus)    │                │
 │   └─────────────┘    └─────────────┘    └─────────────┘                │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -113,32 +113,37 @@
 输入：负反馈数据
    ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                       规划模块 (Planning)                                │
-│   • 解析反馈内容                                                         │
-│   • 识别问题类型                                                         │
-│   • 决定排查策略                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-   ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│                       Function Calling（调用机制）                       │
-│   • LLM 决定调用哪个 Skill                                              │
-│   • LLM 生成 Skill 参数                                                 │
-└─────────────────────────────────────────────────────────────────────────┘
-   ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│                       Skill 层（工具调用）                               │
+│                       数据收集层（Skill）                                │
 │   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│   │ 数据源   │  │ 链路     │  │ 计算     │  │ 知识检索 │              │
-│   │ 检查Skill│  │ 检查Skill│  │ 工具Skill│  │ RAG Skill│              │
+│   │ 实况查询 │  │ 逐时预报 │  │ 逐天预报 │  │ 预警查询 │              │
+│   │  Skill   │  │  Skill   │  │  Skill   │  │  Skill   │              │
 │   └──────────┘  └──────────┘  └──────────┘  └──────────┘              │
+│   ┌──────────┐  ┌──────────┐  ┌──────────┐                            │
+│   │ 体感计算 │  │ 知识检索 │  │ 链路检查 │                            │
+│   │  Skill   │  │  Skill   │  │  Skill   │                            │
+│   └──────────┘  └──────────┘  └──────────┘                            │
 └─────────────────────────────────────────────────────────────────────────┘
    ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                       生成模块 (Generation)                              │
-│   • 汇总检查结果                                                         │
-│   • 定位问题环节                                                         │
-│   • 生成分析报告                                                         │
-│   • 生成回复内容                                                         │
+│                       Prompt 组装层                                      │
+│   • 系统提示词（角色定义、输出格式、信息分层规则）                        │
+│   • 数据摘要（实况 + 体感 + 预警 + 知识库）                              │
+│   • 用户反馈（原始内容）                                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+   ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       LLM 分析层（豆包大模型）                           │
+│   • 理解用户反馈（自然语言理解）                                         │
+│   • 判断问题类型                                                         │
+│   • 综合数据生成分析报告                                                 │
+│   • 生成用户回复（信息分层，不暴露内部信息）                              │
+└─────────────────────────────────────────────────────────────────────────┘
+   ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       结果处理层                                         │
+│   • 解析 LLM 输出（JSON 结构化）                                         │
+│   • 保存分析结果到 MySQL                                                 │
+│   • 返回分析报告 + 用户回复                                              │
 └─────────────────────────────────────────────────────────────────────────┘
    ↓
 输出：分析报告 + 回复内容 + 派单建议
@@ -153,17 +158,19 @@
 │   │                    LLM（大脑）                                  │  │
 │   │   • 理解用户反馈（自然语言理解）                                 │  │
 │   │   • 判断问题类型                                                 │  │
-│   │   • 决定调用哪些 Skill                                           │  │
-│   │   • 组合结果，生成回复                                           │  │
+│   │   • 综合数据生成分析                                             │  │
+│   │   • 生成用户回复（信息分层）                                     │  │
 │   └─────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────┘
                                    ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         Skill 层（固定功能）                             │
 │   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│   │ 数据查询 │  │ 链路检查 │  │ 计算工具 │  │ 通知工具 │              │
-│   │  Skill   │  │  Skill   │  │  Skill   │  │  Skill   │              │
+│   │ 实况查询 │  │ 逐时预报 │  │ 逐天预报 │  │ 预警查询 │              │
 │   └──────────┘  └──────────┘  └──────────┘  └──────────┘              │
+│   ┌──────────┐  ┌──────────┐  ┌──────────┐                            │
+│   │ 体感计算 │  │ 知识检索 │  │ 链路检查 │                            │
+│   └──────────┘  └──────────┘  └──────────┘                            │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -175,323 +182,144 @@
 
 | 组件 | 技术选型 | 说明 |
 |------|----------|------|
-| Agent 框架 | LangChain | 生态成熟、文档完善 |
-| LLM | 豆包大模型 | 国内访问快、成本低 |
-| RAG | Milvus + Embedding | 向量检索 |
+| Agent 框架 | 自研编排 | 直接编排，不需要 LangChain |
+| LLM | 豆包大模型（Ark） | OpenAI 兼容接口 |
+| RAG | Milvus Lite + BGE-large-zh | 向量检索 + 关键词兜底 |
 | 后端框架 | FastAPI | 异步支持、性能好 |
 | 数据库 | MySQL + Redis | 元数据 + 缓存 |
+| Embedding | BGE-large-zh-v1.5 | 中文优化、1024 维 |
 
-### 4.2 Skill 设计
+### 4.2 为什么不用 LangChain
 
-#### Skill 1：数据源检查
+| 维度 | LangChain | 自研编排 |
+|------|-----------|---------|
+| 灵活性 | 框架约束 | 完全可控 |
+| 性能 | 有额外开销 | 最优 |
+| 学习成本 | 高 | 低 |
+| 调试 | 困难 | 容易 |
+| 适用场景 | 复杂链路 | 简单编排 |
+
+**结论**：我们的场景是固定编排（收集数据 → LLM 分析），不需要 LangChain 的动态路由能力。
+
+### 4.3 为什么选 BGE-large-zh
+
+| 维度 | BGE-large-zh | 其他选项 |
+|------|--------------|---------|
+| 中文优化 | ✅ 智源研究院专为中文训练 | 多语言模型中文效果一般 |
+| 开源免费 | ✅ MIT 协议 | OpenAI Embedding 要付费 |
+| 本地运行 | ✅ 不依赖外部 API | API 类有网络延迟 |
+| 维度 | 1024 维，精度高 | 小模型 384/768 维精度低 |
+| 社区活跃 | ✅ HuggingFace 下载量高 | 冷门模型文档少 |
+
+### 4.4 Skill 设计
+
+#### Skill 1：实况数据查询
 
 ```python
-def check_data_source(location: str, time: str, data_type: str) -> dict:
+async def query_weather_data(location: str, time: str) -> WeatherData:
     """
-    检查数据源状态
-    
-    Args:
-        location: 位置（城市/经纬度）
-        time: 时间
-        data_type: 数据类型（温度/风速/降水等）
-    
-    Returns:
-        {
-            "status": "正常/异常",
-            "station_id": "气象站ID",
-            "data_quality": "数据质量",
-            "coverage": "是否覆盖"
-        }
+    查询实况气象数据
+    数据源：MySQL weather_cn 表
+    返回：温度、体感、湿度、风速风向、能见度、气压、降水
     """
-    # 查询气象站状态
-    # 检查数据质量
-    # 返回检查结果
 ```
 
-#### Skill 2：链路检查
+#### Skill 2：逐时预报查询
 
 ```python
-def check_pipeline(location: str, time: str) -> dict:
+async def query_hourly_data(location: str, hours: int = 24) -> list[HourlyData]:
     """
-    检查整个数据链路
-    
-    Args:
-        location: 位置
-        time: 时间
-    
-    Returns:
-        {
-            "data_source": {"status": "正常", "detail": "..."},
-            "collection": {"status": "正常", "detail": "..."},
-            "processing": {"status": "正常", "detail": "..."},
-            "storage": {"status": "正常", "detail": "..."},
-            "publishing": {"status": "正常", "detail": "..."}
-        }
+    查询逐时预报
+    数据源：MySQL weather_hh 表
+    返回：24 小时逐时预报
     """
-    # 检查数据源
-    # 检查采集链路（Kafka）
-    # 检查处理链路（Flink）
-    # 检查存储（HBase）
-    # 检查发布（API）
 ```
 
-#### Skill 3：气象数据查询
+#### Skill 3：逐天预报查询
 
 ```python
-def query_weather_data(location: str, time: str, data_type: str) -> dict:
+async def query_forecast_data(location: str, days: int = 15) -> list[ForecastData]:
     """
-    查询气象数据
-    
-    Args:
-        location: 位置
-        time: 时间
-        data_type: 数据类型
-    
-    Returns:
-        {
-            "temperature": 25.0,
-            "humidity": 30.0,
-            "wind_speed": 3.0,
-            "precipitation": 0.0
-        }
+    查询逐天预报
+    数据源：MySQL weather_ff 表
+    返回：15 天逐天预报
     """
-    # 查询 HBase / API
-    # 返回结构化数据
 ```
 
 #### Skill 4：预警数据查询
 
 ```python
-def query_alert_data(location: str, time: str) -> dict:
+async def query_alert_data(location: str, time: str) -> AlertData:
     """
     查询预警数据
-    
-    Args:
-        location: 位置
-        time: 时间
-    
-    Returns:
-        {
-            "has_alert": true,
-            "alert_type": "暴雨",
-            "alert_level": "黄色",
-            "alert_time": "2024-01-15 13:30"
-        }
+    数据源：MySQL alert_data 表
+    返回：预警类型、级别、生效时间
     """
-    # 查询预警系统
-    # 返回预警数据
 ```
 
 #### Skill 5：体感温度计算
 
 ```python
-def calculate_feels_like(temperature: float, humidity: float, wind_speed: float) -> dict:
+async def calculate_feels_like(temperature: float, humidity: float, wind_speed: float) -> FeelsLikeResult:
     """
     计算体感温度
-    
-    Args:
-        temperature: 实际温度（℃）
-        humidity: 相对湿度（%）
-        wind_speed: 风速（m/s）
-    
-    Returns:
-        {
-            "feels_like": 25.0,
-            "comfort": "温暖",
-            "description": "实际温度25℃，体感温度25℃"
-        }
+    算法：风寒指数（低温+大风）+ 热指数（高温+高湿）
+    返回：体感温度、舒适度、说明
     """
-    # 计算风寒指数（低温+大风）
-    # 计算热指数（高温+高湿）
-    # 返回体感温度
 ```
 
 #### Skill 6：知识检索（RAG）
 
 ```python
-def search_knowledge(query: str) -> list:
+async def search_knowledge(query: str, top_k: int = 3) -> list[KnowledgeResult]:
     """
-    RAG 检索相似案例和气象知识
-    
-    Args:
-        query: 查询内容
-    
-    Returns:
-        [
-            {
-                "content": "案例内容",
-                "solution": "解决方案",
-                "score": 0.95
-            }
-        ]
+    检索相似案例
+    策略：向量检索优先，关键词匹配兜底
+    返回：相似案例列表（内容、方案、分数）
     """
-    # 向量检索
-    # 返回相似案例
 ```
 
-#### Skill 7：发送通知
+#### Skill 7：链路检查
 
 ```python
-def send_notification(user_id: str, content: str) -> bool:
+async def check_pipeline(location: str, time: str) -> PipelineResult:
     """
-    发送通知给用户
-    
-    Args:
-        user_id: 用户ID
-        content: 通知内容
-    
-    Returns:
-        是否发送成功
+    检查数据链路状态
+    检查项：各表数据量、最新时间、数据质量
+    返回：各环节状态
     """
-    # 调用推送服务
-    # 返回结果
 ```
 
-### 4.3 Function Calling 定义
+### 4.5 Function Calling 定义
 
 ```python
 tools = [
     {
         "type": "function",
         "function": {
-            "name": "check_data_source",
-            "description": "检查数据源状态，包括气象站状态、数据质量、覆盖范围",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "位置（城市名或经纬度）"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "时间（日期或时间范围）"
-                    },
-                    "data_type": {
-                        "type": "string",
-                        "description": "数据类型（temperature/wind_speed/precipitation等）"
-                    }
-                },
-                "required": ["location", "time", "data_type"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "check_pipeline",
-            "description": "检查整个数据链路状态，包括数据源、采集、处理、存储、发布",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "位置"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "时间"
-                    }
-                },
-                "required": ["location", "time"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "query_weather_data",
-            "description": "查询气象数据，包括温度、湿度、风速、降水等",
+            "description": "查询实况气象数据",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "位置"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "时间"
-                    },
-                    "data_type": {
-                        "type": "string",
-                        "description": "数据类型"
-                    }
-                },
-                "required": ["location", "time", "data_type"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_alert_data",
-            "description": "查询预警数据",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "位置"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "时间"
-                    }
+                    "location": {"type": "string", "description": "位置"},
+                    "time": {"type": "string", "description": "时间"},
                 },
                 "required": ["location", "time"]
             }
         }
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "calculate_feels_like",
-            "description": "计算体感温度，考虑风寒指数和热指数",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "temperature": {
-                        "type": "number",
-                        "description": "实际温度（℃）"
-                    },
-                    "humidity": {
-                        "type": "number",
-                        "description": "相对湿度（%）"
-                    },
-                    "wind_speed": {
-                        "type": "number",
-                        "description": "风速（m/s）"
-                    }
-                },
-                "required": ["temperature", "humidity", "wind_speed"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "search_knowledge",
-            "description": "检索相似案例和气象知识",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "查询内容"
-                    }
-                },
-                "required": ["query"]
-            }
-        }
-    }
+    # ... 其他 Skill
 ]
 ```
 
-### 4.4 Prompt 设计
+**说明**：当前采用直接编排方式，不需要 LLM 动态选择 Skill。后续如果 Skill 种类增多，再引入 Function Calling。
 
-```python
-SYSTEM_PROMPT = """
+### 4.6 Prompt 设计
+
+#### 系统提示词
+
+```
 你是气象数据质量分析专家，负责分析用户反馈的气象数据问题。
 
 ## 你的能力：
@@ -501,35 +329,52 @@ SYSTEM_PROMPT = """
 4. 检索相似案例，参考历史方案
 5. 生成分析报告和回复内容
 
-## 排查流程：
-1. 理解用户反馈：提取关键信息（位置、时间、问题类型）
-2. 查询气象数据：获取实际数据
-3. 检查数据链路：定位问题环节
-4. 计算体感温度：解释用户感受（如需要）
-5. 检索相似案例：参考历史方案
-6. 生成报告：输出结构化分析报告
+## 重要规则 - 信息分层：
 
-## 气象知识：
-- 体感温度 ≠ 实际温度，受阳光、风速、湿度影响
-- 风寒指数：低温+大风时，体感温度比实际温度低
-- 热指数：高温+高湿时，体感温度比实际温度高
-- 露点温度 > 24℃时，感觉闷热
+### 内部信息（用于分析，不告诉用户）：
+- 链路检查结果（数据延迟、系统状态）
+- 数据源状态（气象站、数据库）
+- 内部技术细节
 
-## 输出格式：
-{
-    "feedback_type": "问题类型",
-    "location": "位置",
-    "time": "时间",
-    "user_claim": "用户声称的情况",
-    "actual_data": "实际数据",
-    "check_results": "链路检查结果",
-    "comparison": "对比分析",
-    "root_cause": "问题根因",
-    "meteorological_explanation": "气象原理解释",
-    "suggestion": "改进建议",
-    "reply_content": "回复用户内容"
-}
-"""
+### 用户回复（只包含）：
+- 实际气象数据
+- 体感温度分析
+- 气象原理解释
+- 可操作建议
+
+## reply_content 生成规则：
+1. 如果有生效预警，必须在回复中说明当前预警状态
+2. 如果用户反馈与预警相关，结合预警信息解释
+3. 不要只给数据，要解释原因
+4. 语气友好，像真人客服
+```
+
+### 4.7 知识库数据结构
+
+#### CSV 字段设计
+
+| 字段 | 说明 | 用途 |
+|------|------|------|
+| `module` | 产品模块（14 类） | 结构化过滤 |
+| `problem_pattern` | 问题模式（5 类） | 分类匹配 |
+| `problem_desc` | 问题描述 | 向量检索 + 展示 |
+| `root_cause` | 根因分析 | 向量检索 + LLM 参考 |
+| `solution` | 解决方案 | 返回给 LLM |
+| `tags` | 语义标签 | 向量检索增强 |
+| `severity` | 严重程度 | 排序加权 |
+
+#### Embedding 拼接
+
+```python
+embed_text = problem_desc + root_cause + solution + tags
+```
+
+#### 向量检索流程
+
+```
+用户反馈 → BGE Embedding → Milvus 余弦相似度 → Top-K 结果
+                              ↓
+                    向量检索失败 → 关键词匹配兜底
 ```
 
 ---
@@ -545,10 +390,10 @@ POST /api/v1/agent/analyze
 
 请求：
 {
-    "feedback_id": "FB20240115001",
-    "content": "北京温度不准，显示25度，实际30度",
-    "time": "2024-01-15",
-    "location": "北京",
+    "feedback_id": "FB20260716001",
+    "content": "朝阳早上感觉挺凉快，怎么就高温预警了",
+    "time": "2026-07-16",
+    "location": "朝阳",
     "user_id": "U10001",
     "source": "APP"
 }
@@ -557,27 +402,26 @@ POST /api/v1/agent/analyze
 {
     "code": 200,
     "data": {
-        "analysis_id": "A20240115001",
-        "feedback_type": "天气不准",
-        "problem_location": "用户侧",
-        "root_cause": "用户在阳光直射下，体感温度比实际温度高",
+        "analysis_id": "A20260716001",
+        "feedback_type": "预警理解偏差",
+        "root_cause": "用户对高温预警时效存在误解",
         "actual_data": {
-            "temperature": 25.0,
-            "humidity": 30.0,
-            "wind_speed": 3.0,
-            "feels_like": 25.0
+            "temperature": 33.0,
+            "humidity": 39.0,
+            "wind_speed": 4.5
         },
-        "check_results": {
-            "data_source": {"status": "正常"},
-            "collection": {"status": "正常"},
-            "processing": {"status": "正常"},
-            "storage": {"status": "正常"},
-            "publishing": {"status": "正常"},
-            "user_side": {"status": "异常", "detail": "用户位置和气象站不匹配"}
+        "feels_like": {
+            "feels_like": 33.0,
+            "comfort": "炎热"
         },
-        "meteorological_explanation": "阳光直射时，体感温度可能比实际温度高5-10℃",
-        "suggestion": "建议APP增加体感温度显示",
-        "reply_content": "您好！经过分析，当天实际温度25℃，体感温度25℃。您感受到的30度可能是阳光直射导致的体感差异。"
+        "alert_data": {
+            "alert_type": "高温",
+            "alert_level": "黄色",
+            "alert_time": "2026-07-13 16:00:00"
+        },
+        "meteorological_explanation": "高温预警是基于当日整体高温趋势发布的...",
+        "suggestion": "在APP中增加高温预警的时效说明",
+        "reply_content": "您好，高温预警是基于当日整体高温趋势发布的..."
     }
 }
 ```
@@ -589,156 +433,395 @@ POST /api/v1/agent/batch-analyze
 
 请求：
 {
-    "feedback_ids": ["FB20240115001", "FB20240115002", ...]
+    "feedbacks": [
+        {"feedback_id": "FB001", "content": "温度不准", "location": "海淀"},
+        {"feedback_id": "FB002", "content": "没收到预警", "location": "北京"}
+    ]
 }
 
 响应：
 {
     "code": 200,
     "data": {
-        "batch_id": "B20240115001",
-        "total": 100,
-        "completed": 50,
-        "results": [...]
+        "batch_id": "B20260716001",
+        "total": 2,
+        "status": "processing"
     }
 }
 ```
 
-#### 接口 3：获取分析结果
+#### 接口 3：查询批量进度
 
 ```
-GET /api/v1/agent/analysis/{analysis_id}
+GET /api/v1/agent/batch/{batch_id}
 
 响应：
 {
     "code": 200,
     "data": {
-        "analysis_id": "A20240115001",
-        "status": "completed",
-        "result": {...}
+        "batch_id": "B20260716001",
+        "total": 2,
+        "completed": 2,
+        "failed": 0,
+        "status": "completed"
     }
 }
 ```
 
-### 5.2 数据库设计
+### 5.2 分析结果管理接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/analysis/list` | GET | 查询历史列表（支持过滤） |
+| `/api/v1/analysis/{id}` | GET | 查询单条详情 |
+| `/api/v1/analysis/review` | POST | 审核（通过/驳回） |
+| `/api/v1/analysis/{id}/send` | POST | 发送回复给用户 |
+| `/api/v1/analysis/stats/summary` | GET | 统计概览 |
+
+### 5.3 问题预警接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/monitor/overview` | GET | 监控概览 |
+| `/api/v1/monitor/trend` | GET | 反馈趋势 |
+| `/api/v1/monitor/hot-issues` | GET | 热点问题 |
+
+### 5.4 数据库设计
+
+#### 分析结果表
 
 ```sql
--- 分析记录表
-CREATE TABLE agent_analysis (
+CREATE TABLE analysis_result (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    analysis_id VARCHAR(64) NOT NULL COMMENT '分析ID',
+    analysis_id VARCHAR(64) NOT NULL UNIQUE COMMENT '分析ID',
     feedback_id VARCHAR(64) NOT NULL COMMENT '反馈ID',
+    feedback_content TEXT COMMENT '反馈内容',
+    location VARCHAR(64) COMMENT '位置',
+    user_id VARCHAR(64) COMMENT '用户ID',
+    source VARCHAR(32) COMMENT '来源',
     feedback_type VARCHAR(32) COMMENT '问题类型',
-    location VARCHAR(128) COMMENT '位置',
-    time DATETIME COMMENT '时间',
-    problem_location VARCHAR(32) COMMENT '问题环节',
     root_cause TEXT COMMENT '问题根因',
+    meteorological_explanation TEXT COMMENT '气象解释',
     suggestion TEXT COMMENT '改进建议',
     reply_content TEXT COMMENT '回复内容',
-    actual_data JSON COMMENT '实际数据',
-    check_results JSON COMMENT '检查结果',
+    actual_temp FLOAT COMMENT '实际温度',
+    actual_humidity FLOAT COMMENT '实际湿度',
+    actual_wind_speed FLOAT COMMENT '实际风速',
+    feels_like FLOAT COMMENT '体感温度',
+    alert_type VARCHAR(32) COMMENT '预警类型',
+    alert_level VARCHAR(16) COMMENT '预警级别',
+    alert_time VARCHAR(32) COMMENT '预警时间',
     status VARCHAR(16) DEFAULT 'pending' COMMENT '状态',
+    reviewer VARCHAR(64) COMMENT '审核人',
+    review_time DATETIME COMMENT '审核时间',
+    review_comment TEXT COMMENT '审核意见',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE INDEX idx_analysis_id (analysis_id),
-    INDEX idx_feedback_id (feedback_id),
     INDEX idx_status (status),
-    INDEX idx_created_at (created_at)
-) COMMENT '分析记录表';
-
--- 知识库表
-CREATE TABLE agent_knowledge (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    problem_type VARCHAR(32) COMMENT '问题类型',
-    problem_desc TEXT COMMENT '问题描述',
-    root_cause TEXT COMMENT '问题根因',
-    solution TEXT COMMENT '解决方案',
-    embedding BLOB COMMENT '向量',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_problem_type (problem_type)
-) COMMENT '知识库表';
+    INDEX idx_feedback (feedback_id),
+    INDEX idx_created (created_at)
+) COMMENT='分析结果表';
 ```
+
+#### 气象数据表
+
+| 表名 | 说明 | 主要字段 |
+|------|------|---------|
+| `city` | 城市表 | city_id, city_name |
+| `weather_cn` | 实况数据 | city_id, temp, humidity, wspd, wdir, vis, pressure |
+| `weather_hh` | 逐时预报 | city_id, predict_time, temp, humidity, wspd |
+| `weather_ff` | 逐天预报 | city_id, predict_date, temp_high, temp_low |
+| `alert_data` | 预警数据 | city_id, alert_type, alert_level, content, start_time, end_time |
 
 ---
 
-## 六、落地计划
+## 六、RAG 知识库设计
 
-### 6.1 阶段划分
+### 6.1 三层索引架构
 
-| 阶段 | 时间 | 内容 | 产出 |
+```
+┌──────────────────────────────────────────────────────────┐
+│  Layer 1: 产品模块（module）                              │
+│  实况/逐天预报/短临降水/天气预警/空气质量/...             │
+└──────────────────────────────────────────────────────────┘
+                          ↓
+┌──────────────────────────────────────────────────────────┐
+│  Layer 2: 问题模式（problem_pattern）                     │
+│  数据偏差/时空误差/时效延迟/认知偏差/体验缺陷             │
+└──────────────────────────────────────────────────────────┘
+                          ↓
+┌──────────────────────────────────────────────────────────┐
+│  Layer 3: 语义标签（tags）                                │
+│  温度/降雨/风力/体感温度/气象原理/预警理解/...            │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 6.2 检索流程
+
+```
+用户反馈: "热死了"
+    ↓
+BGE Embedding: [0.12, -0.34, 0.56, ..., 0.78]
+    ↓
+Milvus 向量检索: Top-3 相似案例
+    ↓
+返回: [
+    {content: "[实况][数据偏差] 白天38度晚上还30度根本睡不着", score: 0.56},
+    {content: "[实况][认知偏差] 南方35度湿热为啥比北方38度干热更难受", score: 0.54}
+]
+```
+
+### 6.3 评估指标
+
+| 指标 | 定义 | 目标 | 实际 |
 |------|------|------|------|
-| 阶段 1 | 1-2 周 | 数据准备、Skill 开发 | Skill 接口 |
-| 阶段 2 | 2-3 周 | Agent 开发、Prompt 优化 | Agent 服务 |
-| 阶段 3 | 1 周 | 测试、优化 | 测试报告 |
-| 阶段 4 | 1 周 | 部署、上线 | 上线服务 |
+| Top-1 命中率 | 第一个结果正确比例 | >90% | 93.3% |
+| Top-3 命中率 | 前三个结果包含正确答案 | >95% | 93.3% |
+| MRR | 正确答案排名倒数平均 | >0.8 | - |
 
-### 6.2 详细计划
+---
+
+## 七、信息分层设计
+
+### 7.1 内部信息 vs 用户回复
+
+| 信息类型 | 内容 | 是否告诉用户 |
+|---------|------|-------------|
+| 实况数据 | 温度、湿度、风速 | ✅ 告诉 |
+| 体感分析 | 体感温度、舒适度 | ✅ 告诉 |
+| 预警信息 | 预警类型、级别 | ✅ 告诉 |
+| 气象解释 | 原理性说明 | ✅ 告诉 |
+| 链路检查 | 数据延迟、系统状态 | ❌ 不告诉 |
+| 数据源状态 | 气象站、数据库 | ❌ 不告诉 |
+| 根因分析 | 技术性原因 | ❌ 不告诉 |
+| 改进建议 | 内部优化方案 | ❌ 不告诉 |
+
+### 7.2 Prompt 约束
 
 ```
-第 1 周：数据准备
-├── 收集负反馈数据，整理成结构化格式
-├── 收集气象、预警、AQI 数据接口
-├── 整理历史案例，构建知识库
-└── 设计数据库表结构
+## 重要规则 - 信息分层：
 
-第 2 周：Skill 开发
-├── 开发数据源检查 Skill
-├── 开发链路检查 Skill
-├── 开发数据查询 Skill
-├── 开发计算工具 Skill
-└── 测试 Skill 接口
+### 内部信息（用于分析，不告诉用户）：
+- 链路检查结果（数据延迟、系统状态）
+- 数据源状态（气象站、数据库）
+- 内部技术细节
 
-第 3 周：Agent 开发
-├── 集成 LangChain
-├── 定义 Function Calling
-├── 设计 Prompt
-├── 实现 Agent 流程
-└── 初步测试
-
-第 4 周：优化测试
-├── Prompt 优化
-├── 性能优化
-├── 功能测试
-└── 压力测试
-
-第 5 周：部署上线
-├── 部署服务
-├── 接入反馈系统
-├── 监控告警
-└── 文档完善
+### 用户回复（只包含）：
+- 实际气象数据
+- 体感温度分析
+- 气象原理解释
+- 可操作建议
 ```
 
 ---
 
-## 七、风险评估
+## 八、审核流程
+
+### 8.1 状态流转
+
+```
+用户反馈 → Agent 分析 → 结果存库(status=pending)
+                            ↓
+                    运营人员审核
+                     ↓           ↓
+                  approved    rejected
+                     ↓
+                  发送给用户(status=sent)
+```
+
+### 8.2 状态说明
+
+| 状态 | 说明 | 操作人 |
+|------|------|--------|
+| `pending` | 待审核 | - |
+| `approved` | 已通过 | 运营人员 |
+| `rejected` | 已驳回 | 运营人员 |
+| `sent` | 已发送 | 系统 |
+
+---
+
+## 九、问题预警
+
+### 9.1 监控维度
+
+| 维度 | 检查内容 | 阈值 |
+|------|---------|------|
+| 反馈量趋势 | 每小时/每天反馈数量 | >100 条/天 |
+| 问题类型分布 | 某类问题突增 | 占比 >50% |
+| 地区集中度 | 某地区反馈集中 | >20 条 |
+| 严重程度分布 | high 占比上升 | >30% |
+
+### 9.2 告警级别
+
+| 级别 | 触发条件 | 处理 |
+|------|---------|------|
+| `high` | 反馈量突增 / 高严重度占比过高 | 立即通知 |
+| `medium` | 某类问题占比过高 / 某地区集中 | 关注 |
+
+---
+
+## 十、工程实现
+
+### 10.1 项目结构
+
+```
+WeatherAgent/
+├── app/
+│   ├── main.py              # FastAPI 入口
+│   ├── config.py            # 配置管理
+│   ├── api/v1/
+│   │   ├── router.py        # 路由汇总
+│   │   └── endpoints/
+│   │       ├── analyze.py   # 分析接口
+│   │       ├── analysis.py  # 结果管理
+│   │       └── alert_monitor.py  # 问题预警
+│   ├── agent/
+│   │   ├── core.py          # Agent 主逻辑
+│   │   ├── prompts.py       # Prompt 模板
+│   │   └── tools.py         # Function Calling 定义
+│   ├── skills/
+│   │   ├── weather.py       # 气象数据查询
+│   │   ├── alert.py         # 预警查询
+│   │   ├── data_source.py   # 数据源检查
+│   │   ├── pipeline.py      # 链路检查
+│   │   ├── feels_like.py    # 体感计算
+│   │   ├── knowledge.py     # 知识检索
+│   │   └── db.py            # 数据库连接
+│   ├── models/
+│   │   ├── schemas.py       # Pydantic 模型
+│   │   └── database.py      # SQLAlchemy 模型
+│   └── services/
+│       └── llm.py           # LLM 调用封装
+├── downloader/
+│   ├── main.py              # 数据下载入口
+│   ├── fetcher.py           # API 抓取
+│   ├── alert.py             # 预警下载
+│   └── init_city.py         # 城市初始化
+├── tests/
+│   ├── test_weather.py      # 气象测试
+│   ├── test_knowledge.py    # 知识库测试
+│   ├── test_pipeline.py     # 链路测试
+│   ├── test_agent.py        # Agent 测试
+│   ├── test_batch.py        # 批量测试
+│   ├── test_monitor.py      # 监控测试
+│   └── eval_rag.py          # RAG 评估
+├── models/
+│   └── bge-large-zh-v1.5/   # Embedding 模型
+├── weather_feedback_enriched_v3.csv  # 知识库数据
+├── milvus_weather.db        # Milvus 数据
+├── Dockerfile
+├── docker-compose-app.yml
+├── main.py
+├── requirements.txt
+└── .env.example
+```
+
+### 10.2 技术栈
+
+| 组件 | 技术 | 版本 |
+|------|------|------|
+| Python | Python | 3.11 |
+| Web 框架 | FastAPI | 0.138.2 |
+| LLM | 豆包大模型（Ark） | - |
+| 向量数据库 | Milvus Lite | 2.4 |
+| Embedding | BGE-large-zh-v1.5 | 1024 维 |
+| 关系数据库 | MySQL | 8.0 |
+| ORM | SQLAlchemy | 2.0 |
+| HTTP 客户端 | httpx | 0.28 |
+
+---
+
+## 十一、部署方案
+
+### 11.1 Docker 部署
+
+```bash
+# 构建镜像
+docker compose -f docker-compose-app.yml build
+
+# 启动服务
+docker compose -f docker-compose-app.yml up -d
+
+# 查看日志
+docker compose -f docker-compose-app.yml logs -f
+```
+
+### 11.2 环境变量
+
+```bash
+# 数据库
+DB_HOST=localhost
+DB_PORT=3307
+DB_USER=root
+DB_PASSWORD=123456
+DB_NAME=weather
+
+# 北京局数据源
+BJ_API_KEY=your_key
+
+# 豆包大模型
+ARK_API_KEY=your_key
+ARK_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+ARK_MODEL_ENDPOINT=doubao-seed-character-260628
+
+# 预警接口
+ALERT_API_URL=your_url
+ALERT_API_TOKEN=your_token
+```
+
+---
+
+## 十二、性能指标
+
+| 指标 | 目标 | 实际 |
+|------|------|------|
+| 单次分析延迟 | < 5 分钟 | 3-5 秒 |
+| 检索 Top-1 命中率 | > 90% | 93.3% |
+| 检索 Top-3 命中率 | > 95% | 93.3% |
+| 单次分析成本 | - | 0.01 元 |
+| 城市覆盖 | - | 3324 个 |
+| 知识库条目 | - | 194 条 |
+
+---
+
+## 十三、后续规划
+
+| 功能 | 优先级 | 状态 |
+|------|--------|------|
+| 自动派单 | P2 | ❌ 待实现 |
+| Docker 部署 | P2 | ⚠️ 进行中 |
+| 混合检索（向量 + BM25） | P2 | ❌ 待实现 |
+| Reranker 精排 | P2 | ❌ 待实现 |
+| Query 改写 | P2 | ❌ 待实现 |
+| 知识库微调 | P3 | ❌ 待实现 |
+| 多轮对话 | P3 | ❌ 待实现 |
+
+---
+
+## 十四、风险评估
 
 | 风险 | 影响 | 应对措施 |
 |------|------|----------|
-| LLM 准确率不够 | 分析结果不准确 | Prompt 优化、人工审核 |
-| Skill 接口不稳定 | 排查失败 | 重试机制、降级方案 |
-| 数据量大 | 性能问题 | 异步处理、批量分析 |
-| 知识库不完善 | 检索效果差 | 持续积累、人工补充 |
+| LLM 幻觉 | 生成不准确内容 | 数据锚定、输出校验、人工审核 |
+| LLM 超时 | 响应慢 | 超时重试、异步处理 |
+| Token 成本 | 费用高 | Prompt 精简、缓存复用、模型分级 |
+| 向量数据库并发 | 性能瓶颈 | 生产用 Milvus Standalone |
+| 知识库质量 | 检索效果差 | 持续补充、Badcase 闭环 |
 
 ---
 
-## 八、预期效果
-
-| 指标 | 现状 | 目标 | 提升 |
-|------|------|------|------|
-| 排查时间 | 2 小时/个 | 5 分钟/个 | 24 倍 |
-| 排查准确率 | 70% | 95% | 35% |
-| 响应速度 | 2-3 天 | 5 分钟 | 100 倍 |
-| 人力成本 | 100 人天/月 | 10 人天/月 | 10 倍 |
-
----
-
-## 九、总结
+## 十五、总结
 
 本项目通过构建智能 Agent 系统，实现负反馈自动分析和链路排查，解决人工排查耗时、响应慢、链路复杂等痛点。
 
 **核心架构**：Skill + Agent 混合架构
-- Agent 层：负责智能决策（理解反馈、制定计划、生成回复）
-- Skill 层：负责固定功能（数据查询、链路检查、计算工具）
+- Agent 层：负责智能决策（理解反馈、综合分析、生成回复）
+- Skill 层：负责固定功能（数据查询、知识检索、体感计算）
+
+**技术亮点**：
+- RAG 知识库：Milvus + BGE-large-zh，Top-1 命中率 93.3%
+- 信息分层：内部诊断信息不暴露给用户
+- 生产级功能：批量分析、审核流程、问题预警
 
 **核心价值**：
 - 排查时间从 2 小时降到 5 分钟
