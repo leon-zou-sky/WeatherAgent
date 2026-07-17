@@ -53,7 +53,7 @@ async def query_weather_data(
         row = session.execute(
             text("""
                 SELECT city_id, temp, real_feel, humidity, wspd, wdir,
-                       wind_level, weather_id, vis, pressure, precip_1h,
+                       wind_level, weather_zh, vis, pressure, precip_1h,
                        update_time
                 FROM weather_cn
                 WHERE city_id = :cid
@@ -82,7 +82,7 @@ async def query_weather_data(
             wind_speed=float(row[4]) if row[4] else None,
             wind_dir=row[5],
             wind_level=int(row[6]) if row[6] else None,
-            weather_id=row[7],
+            weather_zh=row[7],
             visibility=float(row[8]) if row[8] else None,
             pressure=float(row[9]) if row[9] else None,
             precipitation=float(row[10]) if row[10] else None,
@@ -116,7 +116,7 @@ async def query_hourly_data(
         rows = session.execute(
             text("""
                 SELECT city_id, predict_date, predict_hour, temp, humidity,
-                       wspd, wdir, weather_id, pop, qpf, pressure, vis
+                       wspd, wdir, weather_zh, pop, qpf, pressure, vis
                 FROM weather_hh
                 WHERE city_id = :cid
                 ORDER BY predict_timestamp ASC
@@ -133,7 +133,7 @@ async def query_hourly_data(
                 humidity=float(r[4]) if r[4] else None,
                 wind_speed=float(r[5]) if r[5] else None,
                 wind_dir=r[6],
-                weather_id=r[7],
+                weather_zh=r[7],
                 pop=float(r[8]) if r[8] else None,
                 precipitation=float(r[9]) if r[9] else None,
                 pressure=float(r[10]) if r[10] else None,

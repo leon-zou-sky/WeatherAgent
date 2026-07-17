@@ -290,30 +290,153 @@ async def check_pipeline(location: str, time: str) -> PipelineResult:
     """
 ```
 
-### 4.5 Function Calling 定义
+### 4.5 Function Calling 设计（生活指数分析）
+
+#### 架构说明
+
+生活指数分析采用 Function Calling 架构，与普通天气反馈的 Skill 架构形成互补：
+
+```
+用户反馈
+    ↓
+关键词路由
+    ↓
+┌─────────────────┬─────────────────┐
+│ 天气反馈        │ 指数反馈        │
+│ (Skill 架构)    │ (FC 架构)       │
+└─────────────────┴─────────────────┘
+    ↓                    ↓
+固定调用所有 Skill    LLM 动态选择 Function
+    ↓                    ↓
+1次 LLM 调用          2次 LLM 调用
+```
+
+#### Function 定义
 
 ```python
-tools = [
+INDEX_FUNCTIONS = [
     {
         "type": "function",
         "function": {
-            "name": "query_weather_data",
-            "description": "查询实况气象数据",
+            "name": "get_index_data",
+            "description": "获取指定城市、日期的生活指数数据",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "location": {"type": "string", "description": "位置"},
-                    "time": {"type": "string", "description": "时间"},
+                    "city": {"type": "string", "description": "城市名或城市编号"},
+                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"},
+                    "index_type": {
+                        "type": "string",
+                        "description": "指数类型",
+                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"]
+                    }
                 },
-                "required": ["location", "time"]
+                "required": ["city", "date", "index_type"]
             }
         }
     },
-    # ... 其他 Skill
+    {
+        "type": "function",
+        "function": {
+            "name": "get_index_rules",
+            "description": "获取生活指数的计算规则和判断条件",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "index_type": {
+                        "type": "string",
+                        "description": "指数类型",
+                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"]
+                    }
+                },
+                "required": ["index_type"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather_for_index",
+            "description": "获取计算指数时使用的天气数据",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "城市名或城市编号"},
+                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"}
+                },
+                "required": ["city", "date"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_all_indices",
+            "description": "获取指定城市、日期的所有生活指数",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "城市名或城市编号"},
+                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"}
+                },
+                "required": ["city", "date"]
+            }
+        }
+    }
 ]
 ```
 
-**说明**：当前采用直接编排方式，不需要 LLM 动态选择 Skill。后续如果 Skill 种类增多，再引入 Function Calling。
+#### Function 说明
+
+| Function | 说明 | 数据源 |
+|----------|------|--------|
+| `get_index_data` | 获取单个指数数据 | live_index 表 |
+| `get_index_rules` | 获取指数计算规则 | IndexEngine 规则库 |
+| `get_weather_for_index` | 获取计算用天气数据 | weather_ff 表 |
+| `get_all_indices` | 获取所有指数 | live_index 表 |
+
+#### 指数类型
+
+| 指数 | 说明 | 计算因素 |
+|------|------|---------|
+| 穿衣 | 穿衣建议 | 体感温度、湿度 |
+| 紫外线 | UV 防护建议 | 紫外线指数(UVI) |
+| 中暑 | 中暑风险 | 体感温度 |
+| 感冒 | 感冒风险 | 温差、湿度、昼夜温差 |
+| 运动 | 运动适宜度 | 天气、AQI、温度、风力、UVI |
+| 舒适度 | 体感舒适度 | 体感温度、湿度 |
+| 出行 | 出行适宜度 | 天气、温度、AQI、风力 |
+
+#### 调用流程
+
+```
+用户反馈: "运动指数说适宜，但我差点中暑了"
+    ↓
+LLM 第1次调用：识别指数类型 + 选择 Function
+    → 调用 get_index_data("海淀", "2026-07-17", "运动")
+    → 调用 get_index_rules("运动")
+    → 调用 get_weather_for_index("海淀", "2026-07-17")
+    ↓
+执行 Function，返回结果
+    ↓
+LLM 第2次调用：分析原因 + 生成回复
+    → "运动指数计算未纳入湿度因素，当日湿度较低，
+       体感温度偏高，易引发中暑..."
+```
+
+#### 关键词路由
+
+```python
+# 指数相关关键词
+INDEX_KEYWORDS = ["指数", "穿衣", "运动", "紫外线", "中暑", "感冒",
+                  "舒适度", "出行", "适宜", "不适宜", "闷热", "炎热", "寒冷"]
+
+# 路由逻辑
+if any(kw in feedback.content for kw in INDEX_KEYWORDS):
+    → Function Calling 流程（2次 LLM）
+else:
+    → Skill 流程（1次 LLM）
+```
 
 ### 4.6 Prompt 设计
 

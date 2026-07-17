@@ -1,6 +1,7 @@
 """
 Agent 核心逻辑
 负反馈分析流程：提取信息 → 查数据 → 对比分析 → 生成报告
+指数分析流程：识别指数类型 → Function Calling → LLM 分析
 """
 
 import json
@@ -8,7 +9,7 @@ import logging
 import uuid
 from datetime import datetime
 
-from app.agent.prompts import SYSTEM_PROMPT, ANALYZE_PROMPT_TEMPLATE
+from app.agent.prompts import SYSTEM_PROMPT, ANALYZE_PROMPT_TEMPLATE, INDEX_SYSTEM_PROMPT
 from app.models.schemas import (
     FeedbackRequest,
     AnalysisResult,
@@ -22,6 +23,7 @@ from app.skills import (
     calculate_feels_like,
     search_knowledge,
 )
+from app.agent.index_functions import INDEX_FUNCTIONS, execute_index_function
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +31,30 @@ logger = logging.getLogger(__name__)
 class FeedbackAnalysisAgent:
     """负反馈分析 Agent"""
 
+    # 指数相关关键词
+    INDEX_KEYWORDS = ["指数", "穿衣", "运动", "紫外线", "中暑", "感冒", "舒适度", "出行",
+                      "适宜", "不适宜", "闷热", "炎热", "寒冷"]
+
     def __init__(self):
         self.llm = get_llm_service()
+
+    def _is_index_feedback(self, content: str) -> bool:
+        """判断是否为指数相关反馈"""
+        return any(kw in content for kw in self.INDEX_KEYWORDS)
+
+    async def smart_analyze(self, feedback: FeedbackRequest) -> AnalysisResult:
+        """
+        智能分析：自动判断反馈类型，路由到不同处理流程
+
+        - 指数相关 → Function Calling
+        - 其他天气 → Skill
+        """
+        if self._is_index_feedback(feedback.content):
+            logger.info(f"[Agent] 识别为指数反馈: {feedback.content[:30]}...")
+            return await self.analyze_index(feedback)
+        else:
+            logger.info(f"[Agent] 识别为天气反馈: {feedback.content[:30]}...")
+            return await self.analyze(feedback)
 
     async def analyze(self, feedback: FeedbackRequest) -> AnalysisResult:
         """
@@ -105,6 +129,103 @@ class FeedbackAnalysisAgent:
         logger.info(f"[Agent] 分析完成: {analysis_id}")
         return result
 
+    async def analyze_index(self, feedback: FeedbackRequest) -> AnalysisResult:
+        """
+        分析指数相关反馈（使用 Function Calling）
+
+        流程：
+        1. LLM 识别指数类型 + 决定调用哪些 Function
+        2. 执行 Function 获取数据
+        3. LLM 分析原因生成报告
+        """
+        analysis_id = f"A{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:6]}"
+        location = feedback.location or "未知"
+        time_str = feedback.time or datetime.now().strftime("%Y-%m-%d")
+        content = feedback.content
+
+        logger.info(f"[Agent] 指数分析 {feedback.feedback_id} | 位置={location}")
+
+        # ---- Step 1: LLM 识别指数类型 + 调用 Function ----
+        messages = [
+            {"role": "system", "content": INDEX_SYSTEM_PROMPT},
+            {"role": "user", "content": f"用户反馈: {content}\n位置: {location}\n时间: {time_str}\n\n请识别涉及的指数类型，并获取相关数据进行分析。"},
+        ]
+
+        # 第1次 LLM 调用：识别 + Function 选择
+        llm_response = await self.llm.chat(messages, tools=INDEX_FUNCTIONS)
+
+        # ---- Step 2: 执行 Function ----
+        function_results = []
+        if llm_response.get("tool_calls"):
+            for tool_call in llm_response["tool_calls"]:
+                func_name = tool_call["function"]["name"]
+                func_args = json.loads(tool_call["function"]["arguments"])
+                logger.info(f"[Agent] 调用 Function: {func_name}({func_args})")
+
+                result = await execute_index_function(func_name, func_args)
+                function_results.append({
+                    "tool_call_id": tool_call["id"],
+                    "function": func_name,
+                    "result": result,
+                })
+
+        # ---- Step 3: LLM 分析 + 生成报告 ----
+        # 构建包含 Function 结果的消息
+        analysis_messages = [
+            {"role": "system", "content": INDEX_SYSTEM_PROMPT},
+            {"role": "user", "content": f"用户反馈: {content}\n位置: {location}\n时间: {time_str}"},
+        ]
+
+        if function_results:
+            # 添加 Function 调用和结果
+            analysis_messages.append({
+                "role": "assistant",
+                "content": None,
+                "tool_calls": llm_response.get("tool_calls", []),
+            })
+            for fr in function_results:
+                analysis_messages.append({
+                    "role": "tool",
+                    "tool_call_id": fr["tool_call_id"],
+                    "content": json.dumps(fr["result"], ensure_ascii=False),
+                })
+
+            analysis_messages.append({
+                "role": "user",
+                "content": "请根据以上数据，分析指数是否准确，如果不准确找出原因，并生成用户回复。输出JSON格式：{\"feedback_type\": \"...\", \"root_cause\": \"...\", \"reply_content\": \"...\"}",
+            })
+        else:
+            analysis_messages.append({
+                "role": "user",
+                "content": "无法获取指数数据，请基于你的知识分析并回复用户。",
+            })
+
+        # 第2次 LLM 调用：生成分析报告
+        final_response = await self.llm.chat(analysis_messages)
+
+        # ---- Step 4: 组装结果 ----
+        try:
+            parsed = json.loads(final_response.get("content", "{}"))
+        except (json.JSONDecodeError, TypeError):
+            parsed = {}
+
+        # 获取实况数据
+        weather = await query_weather_data(location, time_str)
+
+        result = AnalysisResult(
+            analysis_id=analysis_id,
+            feedback_type=parsed.get("feedback_type", "指数反馈"),
+            problem_location="指数计算",
+            root_cause=parsed.get("root_cause", "待分析"),
+            actual_data=weather,
+            meteorological_explanation=parsed.get("meteorological_explanation", ""),
+            suggestion=parsed.get("suggestion", ""),
+            reply_content=parsed.get("reply_content", ""),
+        )
+
+        logger.info(f"[Agent] 指数分析完成: {analysis_id}")
+        return result
+
     def _build_data_summary(
         self, weather, hourly, forecast, alert, feels_like, knowledge
     ) -> str:
@@ -119,7 +240,7 @@ class FeedbackAnalysisAgent:
                 f"- 体感温度: {weather.real_feel}℃\n"
                 f"- 湿度: {weather.humidity}%\n"
                 f"- 风速: {weather.wind_speed}m/s {weather.wind_dir}\n"
-                f"- 天气ID: {weather.weather_id}\n"
+                f"- 天气现象: {weather.weather_zh}\n"
                 f"- 能见度: {weather.visibility}m\n"
                 f"- 更新时间: {weather.update_time}"
             )
@@ -137,7 +258,7 @@ class FeedbackAnalysisAgent:
         if hourly:
             hh_lines = [
                 f"  {h.predict_time}: {h.temperature}℃ 湿度{h.humidity}% "
-                f"风速{h.wind_speed}m/s 天气{h.weather_id}"
+                f"风速{h.wind_speed}m/s 天气{h.weather_zh}"
                 for h in hourly
             ]
             parts.append(f"## 逐时预报（最近6小时）\n" + "\n".join(hh_lines))

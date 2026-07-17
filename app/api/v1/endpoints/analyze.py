@@ -114,10 +114,13 @@ async def _process_batch(batch_id: str, feedbacks: list[FeedbackRequest]):
     logger.info(f"批量分析完成: {batch_id}, 成功: {completed}, 失败: {failed}")
 
 
-@router.post("/analyze", response_model=AnalysisResponse, summary="分析单条负反馈")
+@router.post("/analyze", response_model=AnalysisResponse, summary="分析负反馈（自动路由）")
 async def analyze_feedback(request: FeedbackRequest):
     """
-    分析单条负反馈
+    分析负反馈 - 自动判断类型并路由
+
+    - 指数相关反馈 → Function Calling
+    - 天气相关反馈 → Skill
 
     - **feedback_id**: 反馈ID
     - **content**: 反馈内容
@@ -127,11 +130,43 @@ async def analyze_feedback(request: FeedbackRequest):
     - **source**: 来源（可选）
     """
     agent = get_agent()
-    result = await agent.analyze(request)
+    result = await agent.smart_analyze(request)
 
     # 保存到数据库
     _save_analysis_result(request, result)
 
+    return AnalysisResponse(code=200, message="success", data=result)
+
+
+@router.post("/analyze-weather", response_model=AnalysisResponse, summary="分析天气反馈（Skill）")
+async def analyze_weather_feedback(request: FeedbackRequest):
+    """
+    分析天气相关反馈（使用 Skill）
+
+    - **feedback_id**: 反馈ID
+    - **content**: 反馈内容
+    - **time**: 反馈时间（可选）
+    - **location**: 位置（可选）
+    """
+    agent = get_agent()
+    result = await agent.analyze(request)
+    _save_analysis_result(request, result)
+    return AnalysisResponse(code=200, message="success", data=result)
+
+
+@router.post("/analyze-index", response_model=AnalysisResponse, summary="分析指数反馈（FC）")
+async def analyze_index_feedback(request: FeedbackRequest):
+    """
+    分析指数相关反馈（使用 Function Calling）
+
+    - **feedback_id**: 反馈ID
+    - **content**: 反馈内容
+    - **time**: 反馈时间（可选）
+    - **location**: 位置（可选）
+    """
+    agent = get_agent()
+    result = await agent.analyze_index(request)
+    _save_analysis_result(request, result)
     return AnalysisResponse(code=200, message="success", data=result)
 
 

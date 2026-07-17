@@ -10,6 +10,7 @@ import logging
 import httpx
 
 from downloader.models import WeatherCondition, WeatherHourly, WeatherForecast
+from app.skills.weather_codes import get_weather_name
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ def fetch_condition(api_key: str) -> list[WeatherCondition]:
                 wspd=item.get("speed"),
                 wdir=degree_to_dir(float(item.get("degrees", 0))),
                 wind_level=int(item.get("windgrade", 0)),
-                weather_id=item.get("weather"),
+                weather_zh=get_weather_name(item.get("weather", "")),
                 vis=item.get("visibility"),
                 pressure=item.get("pressure"),
                 mslp=item.get("seaPressure"),
@@ -126,7 +127,7 @@ def fetch_hourly(api_key: str) -> list[WeatherHourly]:
                     predict_timestamp=int(dt.timestamp()),
                     predict_date=dt.strftime("%Y-%m-%d"),
                     predict_hour=dt.hour,
-                    weather_id=fi.get("weather"),
+                    weather_zh=get_weather_name(fi.get("weather", "")),
                     temp=fi.get("temp"),
                     wdir=degree_to_dir(float(fi.get("degrees", 0))),
                     wspd=fi.get("speed"),
@@ -169,8 +170,8 @@ def fetch_forecast(api_key: str) -> list[WeatherForecast]:
                     predict_date=fi.get("date"),
                     temp_high=fi.get("max_temp"),
                     temp_low=fi.get("min_temp"),
-                    weather_day=fi.get("day_weather"),
-                    weather_night=fi.get("night_weather"),
+                    weather_day=get_weather_name(fi.get("day_weather", "")),
+                    weather_night=get_weather_name(fi.get("night_weather", "")),
                     wind_dir_day=degree_to_dir(float(fi.get("day_degrees", 0))),
                     wind_level_day=str(fi.get("day_windgrade", "")),
                     wind_dir_night=degree_to_dir(float(fi.get("night_degrees", 0))),
