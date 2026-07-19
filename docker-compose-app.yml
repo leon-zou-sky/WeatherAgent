@@ -5,19 +5,13 @@ services:
     build: .
     container_name: weather-agent
     ports:
-      - "8000:8000"
+      - "8000:8000"   # FastAPI HTTP API
+      - "9000:9000"   # MCP SSE Server
+    env_file:
+      - .env.example
     environment:
       - DB_HOST=host.docker.internal
       - DB_PORT=3307
-      - DB_USER=root
-      - DB_PASSWORD=123456
-      - DB_NAME=weather
-      - BJ_API_KEY=${BJ_API_KEY}
-      - ARK_API_KEY=${ARK_API_KEY}
-      - ARK_BASE_URL=${ARK_BASE_URL}
-      - ARK_MODEL_ENDPOINT=${ARK_MODEL_ENDPOINT}
-      - ALERT_API_URL=${ALERT_API_URL}
-      - ALERT_API_TOKEN=${ALERT_API_TOKEN}
     volumes:
       - ./models:/app/models
       - ./milvus_weather.db:/app/milvus_weather.db

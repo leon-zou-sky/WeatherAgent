@@ -23,9 +23,9 @@ def test_batch_analyze():
 
     # 准备测试数据
     feedbacks = [
-        {"feedback_id": "BATCH001", "content": "海淀温度不准，显示33度实际感觉40度", "location": "海淀"},
-        {"feedback_id": "BATCH002", "content": "没收到暴雨预警", "location": "北京"},
-        {"feedback_id": "BATCH003", "content": "热死了，预报说才30度", "location": "海淀"},
+        {"feedback_id": "BATCH001", "content": "我看一直阴天，什么时候下雨", "location": "朝阳"},
+        {"feedback_id": "BATCH002", "content": "怎么雷雨预警了", "location": "北京"},
+        {"feedback_id": "BATCH003", "content": "热死了，什么时候下雨啊", "location": "广州"},
     ]
 
     # 1. 提交批量任务

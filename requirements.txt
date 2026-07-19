@@ -24,6 +24,7 @@ openai>=1.0.0
 
 # Vector Database
 pymilvus>=2.4.0
+milvus-lite>=2.4.0
 
 # HTTP Client
 httpx>=0.25.0
@@ -33,3 +34,6 @@ python-dotenv>=1.0.0
 
 # Embedding
 sentence-transformers>=2.2.0
+
+# MCP Server
+mcp>=1.0.0

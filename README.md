@@ -15,10 +15,12 @@
 | 组件 | 技术 |
 |------|------|
 | Web 框架 | FastAPI |
-| Agent 框架 | LangChain |
-| LLM | 豆包大模型 (火山引擎) |
-| 向量数据库 | Milvus |
-| 数据库 | MySQL + Redis |
+| Agent 框架 | 自研编排（Skill + Agent 混合架构） |
+| LLM | 豆包大模型 (火山引擎 Ark) |
+| 向量数据库 | Milvus Lite + BGE-large-zh-v1.5 |
+| 数据库 | MySQL 8.0 |
+| MCP Server | MCP Python SDK（stdio / SSE） |
+| 部署 | Docker Compose |
 
 ## 项目结构
 
@@ -101,12 +103,112 @@ curl -X POST http://localhost:8000/api/v1/agent/analyze \
 | `/api/v1/agent/analysis/{id}` | GET | 查询分析结果 |
 | `/health` | GET | 健康检查 |
 
-## 开发计划
+## MCP Server
+
+项目提供 MCP（Model Context Protocol）服务，可直接在 Claude Code / Cursor / Claude Desktop 中使用气象分析能力。
+
+### 6 个工具
+
+| 工具 | 角色 | 说明 |
+|------|------|------|
+| `query_weather` | 客服 | 查询城市实况气象数据 |
+| `query_alert` | 客服 | 查询当前生效的气象预警 |
+| `search_knowledge` | 客服 | 检索知识库相似案例和解决方案 |
+| `analyze_feedback` | 客服 | 分析负反馈，生成分析报告和建议回复 |
+| `check_pipeline` | 运营 | 检查数据链路健康状态 |
+| `get_monitor_overview` | 运营 | 获取反馈监控概览和异常告警 |
+
+### 启动方式
+
+```bash
+# stdio 模式（供 Claude Code / Cursor / Claude Desktop 调用）
+python mcp_main.py
+```
+
+### Claude Code 配置
+
+在项目根目录创建 `.claude/settings.json`：
+
+```json
+{
+  "mcpServers": {
+    "weather-agent": {
+      "command": "python",
+      "args": ["mcp_main.py"],
+      "env": {
+        "DB_HOST": "localhost",
+        "DB_PORT": "3307",
+        "DB_USER": "root",
+        "DB_PASSWORD": "123456",
+        "DB_NAME": "weather"
+      }
+    }
+  }
+}
+```
+
+配置完成后，在 Claude Code 对话中直接说：
+- "帮我查一下北京天气"
+- "有没有预警"
+- "分析这条反馈：温度不准，显示25度实际30度"
+- "检查一下北京数据链路"
+
+Claude 会自动调用对应工具返回结果。
+
+## 部署
+
+### Docker 部署（推荐）
+
+```bash
+# 构建并启动
+docker compose -f docker-compose-app.yml up -d
+
+# 查看日志
+docker compose -f docker-compose-app.yml logs -f
+```
+
+启动后：
+- HTTP API：http://localhost:8000/docs
+- MCP SSE：http://localhost:9000/sse
+
+### 客户端配置
+
+**Trae / Cursor**（连接远程 MCP）：
+
+```json
+{
+  "mcpServers": {
+    "weather-agent": {
+      "url": "http://服务器IP:9000/sse"
+    }
+  }
+}
+```
+
+**Claude Code**（本地 stdio 模式）：
+
+```json
+{
+  "mcpServers": {
+    "weather-agent": {
+      "command": "python",
+      "args": ["mcp_main.py"]
+    }
+  }
+}
+```
+
+## 开发进度
 
 - [x] 项目骨架搭建
-- [ ] 接入豆包大模型 API
-- [ ] 接入真实气象数据源
-- [ ] 实现 Milvus RAG 检索
-- [ ] 接入 MySQL 持久化
-- [ ] 批量异步处理
-- [ ] 监控告警
+- [x] 接入豆包大模型 API
+- [x] 接入真实气象数据源（北京局接口）
+- [x] 实现 Milvus RAG 检索（Top-1 命中率 93.3%）
+- [x] 接入 MySQL 持久化
+- [x] 批量异步处理
+- [x] 监控告警
+- [x] MCP Server（6 个工具，客服 + 运营）
+- [x] Docker 部署（FastAPI + MCP SSE 双服务）
+- [ ] 自动派单
+- [ ] 混合检索（向量 + BM25）
+- [ ] Reranker 精排

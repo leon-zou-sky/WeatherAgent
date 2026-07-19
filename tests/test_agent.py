@@ -23,9 +23,9 @@ async def test_analyze():
 
     feedback = FeedbackRequest(
         feedback_id="TEST001",
-        content="朝阳早上感觉挺凉快，怎么就高温预警了",
+        content="我看一直阴天，什么时候下雨",
         location="朝阳",
-        time="2026-07-16",
+        time="2026-07-18",
         user_id="U001",
         source="APP",
     )
