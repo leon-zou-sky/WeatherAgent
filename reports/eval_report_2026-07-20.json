@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-07-20T11:01:27.369771",
+  "total": 50,
+  "top1_hits": 45,
+  "top3_hits": 49,
+  "top1_rate": 0.9,
+  "top3_rate": 0.98,
+  "module_stats": {
+    "实况": {
+      "total": 16,
+      "top1_hit": 14,
+      "top3_hit": 15
+    },
+    "短临降水": {
+      "total": 1,
+      "top1_hit": 1,
+      "top3_hit": 1
+    },
+    "生活指数": {
+      "total": 7,
+      "top1_hit": 6,
+      "top3_hit": 7
+    },
+    "空气质量": {
+      "total": 5,
+      "top1_hit": 5,
+      "top3_hit": 5
+    },
+    "天气预警": {
+      "total": 7,
+      "top1_hit": 6,
+      "top3_hit": 7
+    },
+    "逐天预报": {
+      "total": 4,
+      "top1_hit": 4,
+      "top3_hit": 4
+    },
+    "逐小时预报": {
+      "total": 1,
+      "top1_hit": 1,
+      "top3_hit": 1
+    },
+    "格点可视化": {
+      "total": 3,
+      "top1_hit": 2,
+      "top3_hit": 3
+    },
+    "台风预报": {
+      "total": 1,
+      "top1_hit": 1,
+      "top3_hit": 1
+    },
+    "App体验": {
+      "total": 3,
+      "top1_hit": 3,
+      "top3_hit": 3
+    },
+    "定位": {
+      "total": 1,
+      "top1_hit": 1,
+      "top3_hit": 1
+    },
+    "数据时效": {
+      "total": 1,
+      "top1_hit": 1,
+      "top3_hit": 1
+    }
+  },
+  "badcases": [
+    {
+      "query": "风力预报偏小实际刮大风",
+      "expected_module": "实况",
+      "expected_tags": "风力",
+      "retrieved_modules": [
+        "天气预警",
+        "天气预警",
+        "短临降水"
+      ],
+      "top1_hit": false,
+      "top3_hit": false
+    }
+  ],
+  "badcase_count": 1
+}

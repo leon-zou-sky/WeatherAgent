@@ -1,153 +1,209 @@
 """
-RAG 检索质量评估
-人工标注测试用例，自动计算命中率
+RAG 检索质量评估脚本
+支持：单次评估、定时评估、报告输出、告警
+
+用法:
+    python tests/eval_rag.py                  # 运行评估
+    python tests/eval_rag.py --report         # 生成报告文件
+    python tests/eval_rag.py --threshold 85   # 自定义阈值
 """
 
 import asyncio
+import json
 import sys
+import os
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.skills.knowledge import search_knowledge
 
-# 测试用例：query + 期望匹配的 module
-# 50 个用例，覆盖 14 个产品模块 + 5 种问题模式
-TEST_CASES = [
-    # ===== 实况数据（15个）=====
-    {"query": "温度比预报高5度", "expected_module": "实况", "desc": "温度偏差-偏高"},
-    {"query": "温度比预报低3度", "expected_module": "实况", "desc": "温度偏差-偏低"},
-    {"query": "体感温度不准跟实际差太多", "expected_module": "实况", "desc": "体感温度"},
-    {"query": "热死了", "expected_module": "实况", "desc": "体感温度-高温"},
-    {"query": "冷得要命", "expected_module": "实况", "desc": "体感温度-低温"},
-    {"query": "湿度显示90%但我感觉没那么湿", "expected_module": "实况", "desc": "湿度偏差"},
-    {"query": "风速不准明明很大风", "expected_module": "实况", "desc": "风速偏差"},
-    {"query": "能见度数据不对", "expected_module": "实况", "desc": "能见度偏差"},
-    {"query": "气压一直在降", "expected_module": "实况", "desc": "气压数据"},
-    {"query": "天气现象显示晴但外面在下雨", "expected_module": "实况", "desc": "天气现象"},
-    {"query": "降水量0但外面明明在下", "expected_module": "实况", "desc": "降水偏差"},
-    {"query": "南方35度湿热为啥比北方38度干热更难受", "expected_module": "实况", "desc": "体感对比"},
-    {"query": "App显示25度但我温度计量的30度", "expected_module": "实况", "desc": "温度偏差-设备对比"},
-    {"query": "紫外线指数不准", "expected_module": "实况", "desc": "紫外线偏差"},
-    {"query": "实况数据一个小时没更新了", "expected_module": "实况", "desc": "数据时效"},
-
-    # ===== 天气预警（8个）=====
-    {"query": "暴雨预警迟了半小时", "expected_module": "天气预警", "desc": "预警延迟"},
-    {"query": "没收到台风预警", "expected_module": "天气预警", "desc": "预警推送"},
-    {"query": "预警解除了但App还显示", "expected_module": "天气预警", "desc": "预警解除"},
-    {"query": "预警级别不准应该是橙色不是黄色", "expected_module": "天气预警", "desc": "预警级别"},
-    {"query": "高温预警没收到推送", "expected_module": "天气预警", "desc": "预警推送-高温"},
-    {"query": "雷电预警来得太突然", "expected_module": "天气预警", "desc": "预警时效"},
-    {"query": "预警范围不准我不在预警区但收到了", "expected_module": "天气预警", "desc": "预警范围"},
-    {"query": "大风预警发了但没那么大风", "expected_module": "天气预警", "desc": "预警准确性"},
-
-    # ===== 逐天预报（6个）=====
-    {"query": "明天预报不准差了好几度", "expected_module": "逐天预报", "desc": "预报偏差"},
-    {"query": "说好的晴天怎么下雨了", "expected_module": "逐天预报", "desc": "预报偏差-晴转雨"},
-    {"query": "7天预报后面几天不准", "expected_module": "逐天预报", "desc": "长期预报"},
-    {"query": "日出日落时间不准", "expected_module": "逐天预报", "desc": "日出日落"},
-    {"query": "昼夜温差预报差太多", "expected_module": "逐天预报", "desc": "温差预报"},
-    {"query": "周末预报能不能准点", "expected_module": "逐天预报", "desc": "周末预报"},
-
-    # ===== 逐时预报（5个）=====
-    {"query": "逐时预报温度变化太假", "expected_module": "逐小时预报", "desc": "逐时温度"},
-    {"query": "未来两小时预报不准", "expected_module": "逐小时预报", "desc": "短期预报"},
-    {"query": "逐时降水概率90%但没下", "expected_module": "逐小时预报", "desc": "降水概率"},
-    {"query": "逐时风速预报跟实际差很多", "expected_module": "逐小时预报", "desc": "逐时风速"},
-    {"query": "逐时预报更新太慢", "expected_module": "逐小时预报", "desc": "更新频率"},
-
-    # ===== 空气质量（4个）=====
-    {"query": "雾霾好严重", "expected_module": "空气质量", "desc": "空气质量-霾"},
-    {"query": "AQI不准", "expected_module": "空气质量", "desc": "AQI偏差"},
-    {"query": "PM2.5数据跟其他App不一样", "expected_module": "空气质量", "desc": "PM2.5偏差"},
-    {"query": "空气质量预报不准", "expected_module": "空气质量", "desc": "空气质量预报"},
-
-    # ===== 生活指数（4个）=====
-    {"query": "紫外线太强", "expected_module": "生活指数", "desc": "紫外线指数"},
-    {"query": "穿衣指数不准", "expected_module": "生活指数", "desc": "穿衣指数"},
-    {"query": "运动指数说适宜但外面在下雨", "expected_module": "生活指数", "desc": "运动指数"},
-    {"query": "感冒指数准不准", "expected_module": "生活指数", "desc": "感冒指数"},
-
-    # ===== 定位（3个）=====
-    {"query": "定位不准", "expected_module": "定位", "desc": "定位偏差"},
-    {"query": "GPS定位偏了好几百米", "expected_module": "定位", "desc": "GPS偏差"},
-    {"query": "切换城市后天气没更新", "expected_module": "定位", "desc": "城市切换"},
-
-    # ===== App体验（3个）=====
-    {"query": "App闪退", "expected_module": "App体验", "desc": "闪退"},
-    {"query": "Widget不更新", "expected_module": "App体验", "desc": "Widget"},
-    {"query": "通知推送太多能不能关", "expected_module": "App体验", "desc": "推送设置"},
-
-    # ===== 其他（2个）=====
-    {"query": "雷达图看不懂", "expected_module": "格点可视化", "desc": "雷达解读"},
-    {"query": "台风路径不准", "expected_module": "台风预报", "desc": "台风预报"},
-]
+# 配置
+DATASET_PATH = Path(__file__).resolve().parent / "test_dataset.json"
+REPORT_DIR = Path(__file__).resolve().parent.parent / "reports"
+DEFAULT_THRESHOLD = 90  # 默认命中率阈值
 
 
-async def evaluate():
-    """运行评估"""
-    print("=" * 60)
-    print("RAG 检索质量评估")
-    print("=" * 60)
+def load_dataset() -> list[dict]:
+    """加载测试集"""
+    with open(DATASET_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-    total = len(TEST_CASES)
-    hit_top1 = 0
-    hit_top3 = 0
-    results_detail = []
 
-    for case in TEST_CASES:
-        query = case["query"]
-        expected = case["expected_module"]
+async def evaluate_single(query: str, expected_module: str, expected_tags: str) -> dict:
+    """评估单条"""
+    results = await search_knowledge(query, top_k=3)
 
-        retrieved = await search_knowledge(query, top_k=3)
-        retrieved_modules = []
-        for r in retrieved:
-            # 从 content 中提取 module: "[实况][数据偏差] xxx"
-            if r.content.startswith("["):
-                module = r.content.split("]")[0].lstrip("[")
+    retrieved_modules = []
+    retrieved_tags = []
+    for r in results:
+        # 从 content 提取 module: "[实况][数据偏差] xxx"
+        if r.content.startswith("["):
+            parts = r.content.split("]")
+            if len(parts) >= 2:
+                module = parts[0].lstrip("[")
                 retrieved_modules.append(module)
+        # 从 solution 提取 tags
+        if r.solution:
+            retrieved_tags.append(r.solution[:20])
 
-        # 判断命中
-        top1_hit = len(retrieved_modules) > 0 and retrieved_modules[0] == expected
-        top3_hit = expected in retrieved_modules
+    top1_hit = len(retrieved_modules) > 0 and retrieved_modules[0] == expected_module
+    top3_hit = expected_module in retrieved_modules
 
-        if top1_hit:
-            hit_top1 += 1
-        if top3_hit:
-            hit_top3 += 1
+    return {
+        "query": query,
+        "expected_module": expected_module,
+        "expected_tags": expected_tags,
+        "retrieved_modules": retrieved_modules,
+        "top1_hit": top1_hit,
+        "top3_hit": top3_hit,
+    }
 
-        status_top1 = "✅" if top1_hit else "❌"
-        status_top3 = "✅" if top3_hit else "❌"
 
-        results_detail.append({
-            "query": query,
-            "desc": case["desc"],
-            "expected": expected,
-            "retrieved": retrieved_modules,
-            "top1_hit": top1_hit,
-            "top3_hit": top3_hit,
-        })
+async def run_evaluation() -> dict:
+    """运行完整评估"""
+    dataset = load_dataset()
+    results = []
+    badcases = []
 
-        print(f"\n查询: \"{query}\" ({case['desc']})")
-        print(f"  期望: {expected}")
-        print(f"  Top1: {retrieved_modules[0] if retrieved_modules else '无'} {status_top1}")
-        print(f"  Top3: {retrieved_modules} {status_top3}")
+    for case in dataset:
+        result = await evaluate_single(
+            case["query"],
+            case.get("expected_module", ""),
+            case.get("expected_tags", ""),
+        )
+        results.append(result)
 
-    # 汇总
-    print("\n" + "=" * 60)
-    print("评估结果汇总")
-    print("=" * 60)
-    print(f"总用例数: {total}")
-    print(f"Top-1 命中率: {hit_top1}/{total} = {hit_top1/total:.1%}")
-    print(f"Top-3 命中率: {hit_top3}/{total} = {hit_top3/total:.1%}")
+        if not result["top3_hit"]:
+            badcases.append(result)
 
-    # Badcase 分析
-    badcases = [r for r in results_detail if not r["top3_hit"]]
-    if badcases:
-        print(f"\n❌ Badcase ({len(badcases)} 条):")
-        for bc in badcases:
-            print(f"  - \"{bc['query']}\": 期望 {bc['expected']}, 检索到 {bc['retrieved']}")
+    # 统计
+    total = len(results)
+    top1_hits = sum(1 for r in results if r["top1_hit"])
+    top3_hits = sum(1 for r in results if r["top3_hit"])
+
+    # 按模块统计
+    module_stats = {}
+    for r in results:
+        m = r["expected_module"]
+        if m not in module_stats:
+            module_stats[m] = {"total": 0, "top1_hit": 0, "top3_hit": 0}
+        module_stats[m]["total"] += 1
+        if r["top1_hit"]:
+            module_stats[m]["top1_hit"] += 1
+        if r["top3_hit"]:
+            module_stats[m]["top3_hit"] += 1
+
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "total": total,
+        "top1_hits": top1_hits,
+        "top3_hits": top3_hits,
+        "top1_rate": top1_hits / total if total > 0 else 0,
+        "top3_rate": top3_hits / total if total > 0 else 0,
+        "module_stats": module_stats,
+        "badcases": badcases,
+        "results": results,
+    }
+
+
+def generate_report(report: dict, threshold: float) -> str:
+    """生成文本报告"""
+    lines = []
+    lines.append("=" * 60)
+    lines.append("📊 RAG 检索质量评估报告")
+    lines.append("=" * 60)
+    lines.append(f"评估时间: {report['timestamp']}")
+    lines.append(f"测试用例: {report['total']} 个")
+    lines.append(f"命中率阈值: {threshold}%")
+    lines.append("")
+
+    # 总体结果
+    top1 = report['top1_rate'] * 100
+    top3 = report['top3_rate'] * 100
+    status1 = "✅" if top1 >= threshold else "⚠️"
+    status3 = "✅" if top3 >= threshold else "⚠️"
+
+    lines.append("📌 总体结果")
+    lines.append("-" * 40)
+    lines.append(f"  Top-1 命中率: {top1:.1f}% {status1} ({report['top1_hits']}/{report['total']})")
+    lines.append(f"  Top-3 命中率: {top3:.1f}% {status3} ({report['top3_hits']}/{report['total']})")
+    lines.append("")
+
+    # 分模块统计
+    lines.append("📌 分模块统计")
+    lines.append("-" * 40)
+    for module, stats in report["module_stats"].items():
+        m_top1 = stats["top1_hit"] / stats["total"] * 100 if stats["total"] > 0 else 0
+        m_top3 = stats["top3_hit"] / stats["total"] * 100 if stats["total"] > 0 else 0
+        lines.append(f"  {module:12} Top-1: {m_top1:5.1f}%  Top-3: {m_top3:5.1f}%  ({stats['total']}条)")
+    lines.append("")
+
+    # Badcase
+    if report["badcases"]:
+        lines.append(f"❌ Badcase ({len(report['badcases'])} 条)")
+        lines.append("-" * 40)
+        for bc in report["badcases"][:10]:  # 最多显示 10 条
+            lines.append(f"  查询: \"{bc['query']}\"")
+            lines.append(f"    期望: {bc['expected_module']}")
+            lines.append(f"    检索: {bc['retrieved_modules']}")
+            lines.append("")
+    else:
+        lines.append("✅ 无 Badcase")
+        lines.append("")
+
+    # 告警
+    if top1 < threshold or top3 < threshold:
+        lines.append("⚠️ 告警：命中率低于阈值！")
+        lines.append(f"  Top-1: {top1:.1f}% (阈值 {threshold}%)")
+        lines.append(f"  Top-3: {top3:.1f}% (阈值 {threshold}%)")
+        lines.append("")
+
+    lines.append("=" * 60)
+    return "\n".join(lines)
+
+
+def save_report(report_text: str, report: dict):
+    """保存报告文件"""
+    REPORT_DIR.mkdir(exist_ok=True)
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    report_path = REPORT_DIR / f"eval_report_{date_str}.txt"
+    json_path = REPORT_DIR / f"eval_report_{date_str}.json"
+
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(report_text)
+
+    # 保存 JSON（不含完整 results，太大）
+    summary = {k: v for k, v in report.items() if k != "results"}
+    summary["badcase_count"] = len(report["badcases"])
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+
+    print(f"📄 报告已保存: {report_path}")
+    print(f"📄 JSON 已保存: {json_path}")
+
+
+async def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="RAG 检索质量评估")
+    parser.add_argument("--report", action="store_true", help="生成报告文件")
+    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="命中率阈值")
+    args = parser.parse_args()
+
+    print("🔍 开始评估...\n")
+    report = await run_evaluation()
+    report_text = generate_report(report, args.threshold)
+
+    print(report_text)
+
+    if args.report:
+        save_report(report_text, report)
+
+    # 返回码：命中率低于阈值返回 1
+    if report["top1_rate"] * 100 < args.threshold:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    asyncio.run(evaluate())
+    asyncio.run(main())
