@@ -192,6 +192,68 @@ class AnalysisResult(Base):
     )
 
 
+class AQICity(Base):
+    """城市 AQI 实况数据表"""
+    __tablename__ = "aqi_city"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    city_id = Column(String(20), nullable=False, comment="城市ID（在意空气ID）")
+    city_name = Column(String(64), comment="城市名称")
+    update_time = Column(String(32), comment="数据更新时间")
+    aqi = Column(Integer, comment="AQI指数")
+    pm25 = Column(Float, comment="PM2.5(μg/m³)")
+    pm25_iaqi = Column(Integer, comment="PM2.5分指数")
+    pm10 = Column(Float, comment="PM10(μg/m³)")
+    pm10_iaqi = Column(Integer, comment="PM10分指数")
+    so2 = Column(Float, comment="SO2(μg/m³)")
+    so2_iaqi = Column(Integer, comment="SO2分指数")
+    no2 = Column(Float, comment="NO2(μg/m³)")
+    no2_iaqi = Column(Integer, comment="NO2分指数")
+    o3 = Column(Float, comment="O3(μg/m³)")
+    o3_iaqi = Column(Integer, comment="O3分指数")
+    co = Column(Float, comment="CO(mg/m³)")
+    co_iaqi = Column(Integer, comment="CO分指数")
+    source = Column(String(32), default="air_matters", comment="数据源")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_aqi_city_time", "city_id", "update_time"),
+        Index("idx_aqi_city_name", "city_name"),
+    )
+
+
+class AQIStation(Base):
+    """监测站 AQI 实况数据表"""
+    __tablename__ = "aqi_station"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    station_code = Column(String(32), nullable=False, comment="监测站编码")
+    station_name = Column(String(64), comment="监测站名称")
+    city_id = Column(String(20), comment="所属城市ID")
+    city_name = Column(String(64), comment="所属城市名称")
+    update_time = Column(String(32), comment="数据更新时间")
+    aqi = Column(Integer, comment="AQI指数")
+    pm25 = Column(Float, comment="PM2.5(μg/m³)")
+    pm25_iaqi = Column(Integer, comment="PM2.5分指数")
+    pm10 = Column(Float, comment="PM10(μg/m³)")
+    pm10_iaqi = Column(Integer, comment="PM10分指数")
+    so2 = Column(Float, comment="SO2(μg/m³)")
+    so2_iaqi = Column(Integer, comment="SO2分指数")
+    no2 = Column(Float, comment="NO2(μg/m³)")
+    no2_iaqi = Column(Integer, comment="NO2分指数")
+    o3 = Column(Float, comment="O3(μg/m³)")
+    o3_iaqi = Column(Integer, comment="O3分指数")
+    co = Column(Float, comment="CO(mg/m³)")
+    co_iaqi = Column(Integer, comment="CO分指数")
+    source = Column(String(32), default="air_matters", comment="数据源")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_station_code", "station_code"),
+        Index("idx_station_city", "city_id"),
+    )
+
+
 # ============ 数据库连接工具 ============
 
 def get_engine(url: str = None, host="localhost", port=3306, user="root", password="", db="weather"):

@@ -63,6 +63,24 @@ async def query_alert(location: str, time: str = "") -> dict:
 
 
 @mcp.tool()
+async def query_aqi(city: str, time: str = "") -> dict:
+    """查询城市空气质量指数（AQI）
+
+    查询指定城市的实时 AQI 数据，包括 AQI 指数、PM2.5、PM10、SO2、NO2、O3、CO 等污染物浓度，
+    以及空气质量等级（优/良/轻度污染等）和健康建议。
+
+    Args:
+        city: 城市名称，如"北京"、"上海"、"广州"
+        time: 查询时间，格式 YYYY-MM-DD，默认当天
+    """
+    from app.skills.aqi import query_aqi_data
+
+    logger.info(f"[MCP] query_aqi: city={city}, time={time}")
+    result = await query_aqi_data(city, time)
+    return result
+
+
+@mcp.tool()
 async def get_life_index(city: str, date: str = "", index_type: str = "") -> dict:
     """查询城市生活指数数据
 
