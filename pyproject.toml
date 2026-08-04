@@ -11,6 +11,12 @@ target-version = "py311"
 fix = true
 exclude = ["test_file", "models"]
 
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
 [tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
@@ -54,12 +60,6 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "downloader"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
 
 # ============ Mypy 配置 ============
 [tool.mypy]
