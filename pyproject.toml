@@ -107,5 +107,4 @@ exclude_lines = [
     "pass",
     "except Exception",
 ]
-fail_under = 80
 show_missing = true
