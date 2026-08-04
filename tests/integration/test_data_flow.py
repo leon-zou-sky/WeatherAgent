@@ -23,9 +23,9 @@ class TestWeatherDataFlow:
                     "speed": 3.5,
                     "degrees": 180,
                     "weather": "01",
-                    "lastUpdate": "2024-01-15 10:00:00"
+                    "lastUpdate": "2024-01-15 10:00:00",
                 }
-            ]
+            ],
         }
 
         assert api_response["code"] == 0
@@ -41,7 +41,7 @@ class TestWeatherDataFlow:
             "humidity": 60,
             "speed": 3.5,
             "degrees": 180,
-            "weather": "01"
+            "weather": "01",
         }
 
         # 转换为内部格式
@@ -52,7 +52,7 @@ class TestWeatherDataFlow:
             "humidity": raw_data["humidity"],
             "wind_speed": raw_data["speed"],
             "wind_dir": "南风",  # 从度数转换
-            "weather_code": raw_data["weather"]
+            "weather_code": raw_data["weather"],
         }
 
         assert transformed["city_id"] == "101010100"
@@ -68,7 +68,7 @@ class TestWeatherDataFlow:
             "temp": 25.0,
             "humidity": 60,
             "wspd": 3.5,
-            "wdir": "南风"
+            "wdir": "南风",
         }
 
         assert "city_id" in db_record
@@ -85,18 +85,14 @@ class TestAQIDataFlow:
         api_response = {
             "saved_places": [
                 {
-                    "place": {
-                        "place_id": "ec8399ca",
-                        "type": "city",
-                        "name": "北京"
-                    },
+                    "place": {"place_id": "ec8399ca", "type": "city", "name": "北京"},
                     "latest": {
                         "update_time": "2024-01-15 10:00:00",
                         "readings": [
                             {"kind": "aqi", "value": "75"},
-                            {"kind": "pm25", "value": "55"}
-                        ]
-                    }
+                            {"kind": "pm25", "value": "55"},
+                        ],
+                    },
                 }
             ]
         }
@@ -113,7 +109,7 @@ class TestAQIDataFlow:
             "update_time": "2024-01-15 10:00:00",
             "aqi": 75.0,
             "pm25": 55.0,
-            "pm10": 85.0
+            "pm10": 85.0,
         }
 
         # 转换为内部格式
@@ -123,7 +119,7 @@ class TestAQIDataFlow:
             "aqi": int(raw_data["aqi"]),
             "pm25": raw_data["pm25"],
             "pm10": raw_data["pm10"],
-            "update_time": raw_data["update_time"]
+            "update_time": raw_data["update_time"],
         }
 
         assert transformed["city_id"] == "101010100"
@@ -139,7 +135,7 @@ class TestAQIDataFlow:
             "pm25": 55.0,
             "pm10": 85.0,
             "update_time": "2024-01-15 10:00:00",
-            "source": "air_matters"
+            "source": "air_matters",
         }
 
         assert "city_id" in db_record
@@ -164,13 +160,7 @@ class TestDataValidation:
 
     def test_data_type_validation(self):
         """测试数据类型验证"""
-        data = {
-            "city_id": "101010100",
-            "temp": 25.0,
-            "humidity": 60,
-            "aqi": 75,
-            "pm25": 55.0
-        }
+        data = {"city_id": "101010100", "temp": 25.0, "humidity": 60, "aqi": 75, "pm25": 55.0}
 
         assert isinstance(data["city_id"], str)
         assert isinstance(data["temp"], float)
@@ -180,12 +170,7 @@ class TestDataValidation:
 
     def test_value_range_validation(self):
         """测试值范围验证"""
-        data = {
-            "temp": 25.0,
-            "humidity": 60,
-            "aqi": 75,
-            "pm25": 55.0
-        }
+        data = {"temp": 25.0, "humidity": 60, "aqi": 75, "pm25": 55.0}
 
         assert -50 <= data["temp"] <= 50
         assert 0 <= data["humidity"] <= 100
@@ -199,11 +184,7 @@ class TestDataConsistency:
 
     def test_city_id_consistency(self):
         """测试城市ID一致性"""
-        city_mapping = {
-            "北京": "101010100",
-            "上海": "101020100",
-            "广州": "101280101"
-        }
+        city_mapping = {"北京": "101010100", "上海": "101020100", "广州": "101280101"}
 
         # 验证映射一致性
         for city_name, city_id in city_mapping.items():
@@ -212,11 +193,7 @@ class TestDataConsistency:
 
     def test_time_format_consistency(self):
         """测试时间格式一致性"""
-        times = [
-            "2024-01-15 10:00:00",
-            "2024-01-15 11:00:00",
-            "2024-01-15 12:00:00"
-        ]
+        times = ["2024-01-15 10:00:00", "2024-01-15 11:00:00", "2024-01-15 12:00:00"]
 
         # 验证时间格式一致性
         for time_str in times:
@@ -229,11 +206,7 @@ class TestDataConsistency:
 
     def test_data_source_consistency(self):
         """测试数据源一致性"""
-        sources = {
-            "weather": "北京局",
-            "aqi": "在意空气",
-            "alert": "预警接口"
-        }
+        sources = {"weather": "北京局", "aqi": "在意空气", "alert": "预警接口"}
 
         # 验证数据源标识一致性
         assert sources["weather"] == "北京局"

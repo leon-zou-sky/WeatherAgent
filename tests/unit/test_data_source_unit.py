@@ -9,6 +9,7 @@ import pytest
 
 # ============ 数据源状态测试 ============
 
+
 @pytest.mark.unit
 class TestDataSourceStatus:
     """数据源状态测试"""
@@ -20,7 +21,7 @@ class TestDataSourceStatus:
             "status": "正常",
             "data_quality": "优",
             "coverage": True,
-            "last_update": "2024-01-15 10:00:00"
+            "last_update": "2024-01-15 10:00:00",
         }
         assert status["status"] == "正常"
         assert status["data_quality"] == "优"
@@ -33,7 +34,7 @@ class TestDataSourceStatus:
             "status": "异常",
             "data_quality": "差",
             "coverage": False,
-            "error": "连接超时"
+            "error": "连接超时",
         }
         assert status["status"] == "异常"
         assert status["coverage"] is False
@@ -43,13 +44,14 @@ class TestDataSourceStatus:
         status_map = {
             "正常": {"color": "green", "level": 0},
             "警告": {"color": "yellow", "level": 1},
-            "异常": {"color": "red", "level": 2}
+            "异常": {"color": "red", "level": 2},
         }
         assert status_map["正常"]["color"] == "green"
         assert status_map["异常"]["level"] == 2
 
 
 # ============ 数据源类型测试 ============
+
 
 @pytest.mark.unit
 class TestDataSourceType:
@@ -69,16 +71,12 @@ class TestDataSourceType:
 
     def test_source_priority(self):
         """测试数据源优先级"""
-        priority = {
-            "北京局": 1,
-            "中国天气网": 2,
-            "WNI": 3,
-            "Aeris": 4
-        }
+        priority = {"北京局": 1, "中国天气网": 2, "WNI": 3, "Aeris": 4}
         assert priority["北京局"] < priority["中国天气网"]
 
 
 # ============ 数据源健康检查测试 ============
+
 
 @pytest.mark.unit
 class TestDataSourceHealth:
@@ -92,7 +90,7 @@ class TestDataSourceHealth:
             "port": 80,
             "timeout": 30,
             "success": True,
-            "response_time": 0.5
+            "response_time": 0.5,
         }
         assert connection_status["success"] is True
         assert connection_status["response_time"] < 5.0
@@ -100,6 +98,7 @@ class TestDataSourceHealth:
     def test_data_freshness(self):
         """测试数据新鲜度"""
         from datetime import datetime
+
         last_update = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
         current_time = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         freshness = (current_time - last_update).total_seconds() / 3600
@@ -116,6 +115,7 @@ class TestDataSourceHealth:
 
 
 # ============ 数据源监控测试 ============
+
 
 @pytest.mark.unit
 class TestDataSourceMonitor:
@@ -145,11 +145,7 @@ class TestDataSourceMonitor:
 
     def test_alert_threshold(self):
         """测试告警阈值"""
-        thresholds = {
-            "availability": 0.99,
-            "response_time": 2.0,
-            "error_rate": 0.05
-        }
+        thresholds = {"availability": 0.99, "response_time": 2.0, "error_rate": 0.05}
         # 检查是否触发告警
         current_availability = 0.98
         current_response_time = 1.5

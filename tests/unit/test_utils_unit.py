@@ -9,6 +9,7 @@ import pytest
 
 # ============ 数值验证测试 ============
 
+
 @pytest.mark.unit
 class TestNumericValidation:
     """数值验证测试"""
@@ -51,6 +52,7 @@ class TestNumericValidation:
 
 # ============ 字符串处理测试 ============
 
+
 @pytest.mark.unit
 class TestStringProcessing:
     """字符串处理测试"""
@@ -91,6 +93,7 @@ class TestStringProcessing:
 
 # ============ 日期时间测试 ============
 
+
 @pytest.mark.unit
 class TestDateTime:
     """日期时间测试"""
@@ -129,6 +132,7 @@ class TestDateTime:
     def test_timestamp_conversion(self):
         """测试时间戳转换"""
         import time
+
         timestamp = int(time.time())
         assert timestamp > 0
         # 10位时间戳
@@ -136,6 +140,7 @@ class TestDateTime:
 
 
 # ============ 列表和字典操作测试 ============
+
 
 @pytest.mark.unit
 class TestCollections:
@@ -150,11 +155,7 @@ class TestCollections:
 
     def test_dict_operations(self):
         """测试字典操作"""
-        weather = {
-            "temp": 25.0,
-            "humidity": 60,
-            "wind": 3.5
-        }
+        weather = {"temp": 25.0, "humidity": 60, "wind": 3.5}
         assert weather["temp"] == 25.0
         assert "humidity" in weather
         assert len(weather) == 3
@@ -175,15 +176,13 @@ class TestCollections:
 
     def test_nested_dict(self):
         """测试嵌套字典"""
-        data = {
-            "北京": {"temp": 25, "aqi": 50},
-            "上海": {"temp": 28, "aqi": 60}
-        }
+        data = {"北京": {"temp": 25, "aqi": 50}, "上海": {"temp": 28, "aqi": 60}}
         assert data["北京"]["temp"] == 25
         assert data["上海"]["aqi"] == 60
 
 
 # ============ 异常处理测试 ============
+
 
 @pytest.mark.unit
 class TestExceptionHandling:
@@ -218,6 +217,7 @@ class TestExceptionHandling:
 
 
 # ============ 边界条件测试 ============
+
 
 @pytest.mark.unit
 class TestBoundaryConditions:
@@ -255,6 +255,7 @@ class TestBoundaryConditions:
     def test_max_int(self):
         """测试最大整数"""
         import sys
+
         max_int = sys.maxsize
         assert max_int > 0
 

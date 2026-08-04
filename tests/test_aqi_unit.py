@@ -100,20 +100,15 @@ class TestParseAQIData:
     def test_parse_valid_data(self):
         """测试解析有效数据"""
         mock_item = {
-            "place": {
-                "place_id": "ec8399ca",
-                "type": "city",
-                "name": "北京",
-                "city_name": "北京"
-            },
+            "place": {"place_id": "ec8399ca", "type": "city", "name": "北京", "city_name": "北京"},
             "latest": {
                 "update_time": "2024-01-15 10:00:00",
                 "readings": [
                     {"kind": "aqi", "value": "75"},
                     {"kind": "pm25", "value": "55"},
-                    {"kind": "pm10", "value": "85"}
-                ]
-            }
+                    {"kind": "pm10", "value": "85"},
+                ],
+            },
         }
 
         result = parse_aqi_data(mock_item)
@@ -127,7 +122,7 @@ class TestParseAQIData:
         """测试解析空数据"""
         mock_item = {
             "place": {"place_id": "test", "type": "city", "name": "test"},
-            "latest": {"update_time": "2024-01-15 10:00:00", "readings": []}
+            "latest": {"update_time": "2024-01-15 10:00:00", "readings": []},
         }
 
         result = parse_aqi_data(mock_item)

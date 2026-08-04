@@ -14,6 +14,7 @@ from app.skills.feels_like import (
 
 # ============ 风寒指数测试 ============
 
+
 @pytest.mark.unit
 class TestWindChill:
     """风寒指数测试"""
@@ -59,10 +60,11 @@ class TestWindChill:
         result = calculate_wind_chill(0, 10)
         # 结果应该保留1位小数
         assert isinstance(result, float)
-        assert len(str(result).split('.')[-1]) <= 1
+        assert len(str(result).split(".")[-1]) <= 1
 
 
 # ============ 热指数测试 ============
+
 
 @pytest.mark.unit
 class TestHeatIndex:
@@ -111,10 +113,11 @@ class TestHeatIndex:
         result = calculate_heat_index(35, 80)
         # 结果应该保留1位小数
         assert isinstance(result, float)
-        assert len(str(result).split('.')[-1]) <= 1
+        assert len(str(result).split(".")[-1]) <= 1
 
 
 # ============ 舒适度描述测试 ============
+
 
 @pytest.mark.unit
 class TestComfortDescription:
@@ -164,6 +167,7 @@ class TestComfortDescription:
 
 
 # ============ 综合测试 ============
+
 
 @pytest.mark.unit
 class TestFeelsLikeIntegration:

@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 class TestWeatherQueryMock:
     """气象查询 Mock 测试"""
 
-    @patch('app.skills.weather.get_session')
+    @patch("app.skills.weather.get_session")
     def test_query_weather_success(self, mock_get_session):
         """测试查询天气成功"""
         # 设置 Mock 返回值
@@ -32,7 +32,7 @@ class TestWeatherQueryMock:
         # 验证 Mock 设置
         assert mock_session.execute.return_value.fetchone.return_value.city_name == "北京"
 
-    @patch('app.skills.weather.get_session')
+    @patch("app.skills.weather.get_session")
     def test_query_weather_not_found(self, mock_get_session):
         """测试查询天气 - 城市不存在"""
         # 设置 Mock 返回 None
@@ -44,7 +44,7 @@ class TestWeatherQueryMock:
         result = mock_session.execute.return_value.fetchone.return_value
         assert result is None
 
-    @patch('app.skills.weather.get_session')
+    @patch("app.skills.weather.get_session")
     def test_query_weather_db_error(self, mock_get_session):
         """测试查询天气 - 数据库错误"""
         # 设置 Mock 抛出异常
@@ -62,7 +62,7 @@ class TestWeatherQueryMock:
 class TestAQIQueryMock:
     """AQI查询 Mock 测试"""
 
-    @patch('app.skills.aqi.get_db_session')
+    @patch("app.skills.aqi.get_db_session")
     def test_query_aqi_success(self, mock_get_session):
         """测试查询AQI成功"""
         # 设置 Mock 返回值
@@ -82,7 +82,7 @@ class TestAQIQueryMock:
         assert result.city_name == "北京"
         assert result.aqi == 75
 
-    @patch('app.skills.aqi.get_db_session')
+    @patch("app.skills.aqi.get_db_session")
     def test_query_aqi_not_found(self, mock_get_session):
         """测试查询AQI - 城市不存在"""
         # 设置 Mock 返回 None
@@ -99,7 +99,7 @@ class TestAQIQueryMock:
 class TestAlertQueryMock:
     """预警查询 Mock 测试"""
 
-    @patch('app.skills.alert.get_session')
+    @patch("app.skills.alert.get_session")
     def test_query_alert_success(self, mock_get_session):
         """测试查询预警成功"""
         # 设置 Mock 返回值
@@ -111,7 +111,7 @@ class TestAlertQueryMock:
                 title="北京市暴雨橙色预警",
                 content="预计未来6小时...",
                 start_time="2024-01-15 10:00:00",
-                end_time="2024-01-15 16:00:00"
+                end_time="2024-01-15 16:00:00",
             )
         ]
 
@@ -124,7 +124,7 @@ class TestAlertQueryMock:
         assert results[0].alert_type == "暴雨"
         assert results[0].alert_level == "橙色"
 
-    @patch('app.skills.alert.get_session')
+    @patch("app.skills.alert.get_session")
     def test_query_alert_empty(self, mock_get_session):
         """测试查询预警 - 无预警"""
         # 设置 Mock 返回空列表
@@ -141,7 +141,7 @@ class TestAlertQueryMock:
 class TestFetcherMock:
     """数据抓取 Mock 测试"""
 
-    @patch('httpx.Client.get')
+    @patch("httpx.Client.get")
     def test_fetch_weather_data(self, mock_get):
         """测试抓取气象数据"""
         # 设置 Mock 返回值
@@ -149,14 +149,7 @@ class TestFetcherMock:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "code": 0,
-            "data": [
-                {
-                    "cityId": "101010100",
-                    "cityName": "北京",
-                    "temp": 25.0,
-                    "humidity": 60
-                }
-            ]
+            "data": [{"cityId": "101010100", "cityName": "北京", "temp": 25.0, "humidity": 60}],
         }
         mock_get.return_value = mock_response
 
@@ -167,7 +160,7 @@ class TestFetcherMock:
         assert data["code"] == 0
         assert len(data["data"]) == 1
 
-    @patch('httpx.Client.get')
+    @patch("httpx.Client.get")
     def test_fetch_weather_error(self, mock_get):
         """测试抓取气象数据 - 请求失败"""
         # 设置 Mock 抛出异常
@@ -183,14 +176,14 @@ class TestFetcherMock:
 class TestLLMCallMock:
     """LLM调用 Mock 测试"""
 
-    @patch('app.services.llm.get_llm_service')
+    @patch("app.services.llm.get_llm_service")
     def test_llm_service(self, mock_get_service):
         """测试获取LLM服务"""
         # 设置 Mock 返回值
         mock_service = MagicMock()
         mock_service.chat.return_value = MagicMock(
             content="分析结果：用户反馈温度偏差，可能原因是数据源延迟。",
-            usage=MagicMock(total_tokens=150)
+            usage=MagicMock(total_tokens=150),
         )
         mock_get_service.return_value = mock_service
 
@@ -200,7 +193,7 @@ class TestLLMCallMock:
         assert "分析结果" in result.content
         assert result.usage.total_tokens == 150
 
-    @patch('app.services.llm.get_llm_service')
+    @patch("app.services.llm.get_llm_service")
     def test_llm_service_error(self, mock_get_service):
         """测试LLM服务错误"""
         # 设置 Mock 抛出异常

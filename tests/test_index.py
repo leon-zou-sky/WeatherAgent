@@ -28,7 +28,9 @@ async def test_index_query():
     else:
         for name, data in result.items():
             if isinstance(data, dict):
-                print(f"  {name}: {data.get('level', 'N/A')} (分数{data.get('score', 'N/A')}) - {data.get('tip', 'N/A')}")
+                print(
+                    f"  {name}: {data.get('level', 'N/A')} (分数{data.get('score', 'N/A')}) - {data.get('tip', 'N/A')}"
+                )
 
     # 查询单个指数
     result = get_index_data("海淀", "2026-07-17", "运动")

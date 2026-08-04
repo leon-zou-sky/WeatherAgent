@@ -11,6 +11,7 @@ from app.skills.weather_codes import get_weather_name
 
 # ============ 风向转换测试 ============
 
+
 @pytest.mark.unit
 class TestWindDirection:
     """风向转换测试"""
@@ -18,47 +19,56 @@ class TestWindDirection:
     def test_north_wind(self):
         """测试北风"""
         from downloader.fetcher import degree_to_dir
+
         assert degree_to_dir(0) == "北风"
         assert degree_to_dir(360) == "北风"
 
     def test_northeast_wind(self):
         """测试东北风"""
         from downloader.fetcher import degree_to_dir
+
         assert degree_to_dir(45) == "东北风"
 
     def test_east_wind(self):
         """测试东风"""
         from downloader.fetcher import degree_to_dir
+
         assert degree_to_dir(90) == "东风"
 
     def test_southeast_wind(self):
         """测试东南风"""
         from downloader.fetcher import degree_to_dir
+
         assert degree_to_dir(135) == "东南风"
 
     def test_south_wind(self):
         """测试南风"""
         from downloader.fetcher import degree_to_dir
+
         assert degree_to_dir(180) == "南风"
 
     def test_southwest_wind(self):
         """测试西南风"""
         from downloader.fetcher import degree_to_dir
+
         assert degree_to_dir(225) == "西南风"
 
     def test_west_wind(self):
         """测试西风"""
         from downloader.fetcher import degree_to_dir
+
         assert degree_to_dir(270) == "西风"
 
     def test_northwest_wind(self):
         """测试西北风"""
         from downloader.fetcher import degree_to_dir
+
         assert degree_to_dir(315) == "西北风"
 
     def test_boundary_values(self):
         """测试边界值"""
         from downloader.fetcher import degree_to_dir
+
         # 边界值测试
         assert degree_to_dir(22.5) == "东北风"
         assert degree_to_dir(67.5) == "东风"
@@ -71,6 +81,7 @@ class TestWindDirection:
 
 
 # ============ 天气代码测试 ============
+
 
 @pytest.mark.unit
 class TestWeatherCode:
@@ -111,6 +122,7 @@ class TestWeatherCode:
 
 
 # ============ 数据验证测试 ============
+
 
 @pytest.mark.unit
 class TestDataValidation:
@@ -153,6 +165,7 @@ class TestDataValidation:
 
 # ============ 时间格式测试 ============
 
+
 @pytest.mark.unit
 class TestTimeFormat:
     """时间格式测试"""
@@ -160,6 +173,7 @@ class TestTimeFormat:
     def test_date_format(self):
         """测试日期格式"""
         from datetime import datetime
+
         # 有效日期格式
         date_str = "2024-01-15"
         dt = datetime.strptime(date_str, "%Y-%m-%d")
@@ -170,6 +184,7 @@ class TestTimeFormat:
     def test_datetime_format(self):
         """测试日期时间格式"""
         from datetime import datetime
+
         # 有效日期时间格式
         datetime_str = "2024-01-15 10:30:00"
         dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
@@ -180,6 +195,7 @@ class TestTimeFormat:
     def test_timestamp_format(self):
         """测试时间戳格式"""
         import time
+
         # 当前时间戳
         timestamp = int(time.time())
         assert timestamp > 0

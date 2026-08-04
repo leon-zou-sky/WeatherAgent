@@ -18,17 +18,11 @@ class TestMCPTools:
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "城市名称或城市编号"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "查询时间"
-                    }
+                    "location": {"type": "string", "description": "城市名称或城市编号"},
+                    "time": {"type": "string", "description": "查询时间"},
                 },
-                "required": ["location"]
-            }
+                "required": ["location"],
+            },
         }
 
         assert tool_def["name"] == "query_weather"
@@ -43,17 +37,11 @@ class TestMCPTools:
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "城市名称"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "查询时间"
-                    }
+                    "location": {"type": "string", "description": "城市名称"},
+                    "time": {"type": "string", "description": "查询时间"},
                 },
-                "required": ["location"]
-            }
+                "required": ["location"],
+            },
         }
 
         assert tool_def["name"] == "query_alert"
@@ -67,17 +55,11 @@ class TestMCPTools:
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "city": {
-                        "type": "string",
-                        "description": "城市名称"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "查询时间"
-                    }
+                    "city": {"type": "string", "description": "城市名称"},
+                    "time": {"type": "string", "description": "查询时间"},
                 },
-                "required": ["city"]
-            }
+                "required": ["city"],
+            },
         }
 
         assert tool_def["name"] == "query_aqi"
@@ -91,21 +73,12 @@ class TestMCPTools:
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "content": {
-                        "type": "string",
-                        "description": "反馈内容"
-                    },
-                    "location": {
-                        "type": "string",
-                        "description": "位置"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "时间"
-                    }
+                    "content": {"type": "string", "description": "反馈内容"},
+                    "location": {"type": "string", "description": "位置"},
+                    "time": {"type": "string", "description": "时间"},
                 },
-                "required": ["content"]
-            }
+                "required": ["content"],
+            },
         }
 
         assert tool_def["name"] == "analyze_feedback"
@@ -119,17 +92,11 @@ class TestMCPTools:
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "城市名称"
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "检查时间"
-                    }
+                    "location": {"type": "string", "description": "城市名称"},
+                    "time": {"type": "string", "description": "检查时间"},
                 },
-                "required": ["location"]
-            }
+                "required": ["location"],
+            },
         }
 
         assert tool_def["name"] == "check_pipeline"
@@ -144,12 +111,8 @@ class TestMCPToolInvocation:
         """测试工具响应格式"""
         response = {
             "success": True,
-            "data": {
-                "city": "北京",
-                "temperature": 25.0,
-                "humidity": 60
-            },
-            "message": "查询成功"
+            "data": {"city": "北京", "temperature": 25.0, "humidity": 60},
+            "message": "查询成功",
         }
 
         assert "success" in response
@@ -158,11 +121,7 @@ class TestMCPToolInvocation:
 
     def test_tool_error_format(self):
         """测试工具错误格式"""
-        error_response = {
-            "success": False,
-            "error": "城市不存在",
-            "error_code": "CITY_NOT_FOUND"
-        }
+        error_response = {"success": False, "error": "城市不存在", "error_code": "CITY_NOT_FOUND"}
 
         assert error_response["success"] is False
         assert "error" in error_response
@@ -171,10 +130,7 @@ class TestMCPToolInvocation:
     def test_tool_parameter_validation(self):
         """测试工具参数验证"""
         # 有效参数
-        valid_params = {
-            "location": "北京",
-            "time": "2024-01-15"
-        }
+        valid_params = {"location": "北京", "time": "2024-01-15"}
         assert "location" in valid_params
 
         # 无效参数（缺少必填）
@@ -203,8 +159,8 @@ class TestMCPServerConfig:
                 "search_knowledge",
                 "analyze_feedback",
                 "check_pipeline",
-                "get_monitor_overview"
-            ]
+                "get_monitor_overview",
+            ],
         }
 
         assert metadata["name"] == "WeatherAgent"
@@ -220,13 +176,20 @@ class TestMCPServerConfig:
             "search_knowledge",
             "analyze_feedback",
             "check_pipeline",
-            "get_monitor_overview"
+            "get_monitor_overview",
         ]
         assert len(tools) == 8
 
     def test_tool_roles(self):
         """测试工具角色"""
-        customer_tools = ["query_weather", "query_alert", "query_aqi", "get_life_index", "search_knowledge", "analyze_feedback"]
+        customer_tools = [
+            "query_weather",
+            "query_alert",
+            "query_aqi",
+            "get_life_index",
+            "search_knowledge",
+            "analyze_feedback",
+        ]
         operator_tools = ["check_pipeline", "get_monitor_overview"]
 
         assert len(customer_tools) == 6

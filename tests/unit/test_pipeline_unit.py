@@ -9,6 +9,7 @@ import pytest
 
 # ============ 链路状态测试 ============
 
+
 @pytest.mark.unit
 class TestPipelineStatus:
     """链路状态测试"""
@@ -37,28 +38,21 @@ class TestPipelineStatus:
 
 # ============ 链路结果测试 ============
 
+
 @pytest.mark.unit
 class TestPipelineResult:
     """链路结果测试"""
 
     def test_result_structure(self):
         """测试结果结构"""
-        result = {
-            "status": "正常",
-            "detail": "数据源正常",
-            "update_time": "2024-01-15 10:00:00"
-        }
+        result = {"status": "正常", "detail": "数据源正常", "update_time": "2024-01-15 10:00:00"}
         assert "status" in result
         assert "detail" in result
         assert result["status"] == "正常"
 
     def test_abnormal_result(self):
         """测试异常结果"""
-        result = {
-            "status": "异常",
-            "detail": "数据源连接超时",
-            "error_code": "TIMEOUT"
-        }
+        result = {"status": "异常", "detail": "数据源连接超时", "error_code": "TIMEOUT"}
         assert result["status"] == "异常"
         assert "超时" in result["detail"]
 
@@ -69,7 +63,7 @@ class TestPipelineResult:
             {"name": "采集", "status": "正常"},
             {"name": "处理", "status": "异常"},
             {"name": "存储", "status": "正常"},
-            {"name": "发布", "status": "正常"}
+            {"name": "发布", "status": "正常"},
         ]
 
         # 统计正常步骤
@@ -82,6 +76,7 @@ class TestPipelineResult:
 
 
 # ============ 时间检查测试 ============
+
 
 @pytest.mark.unit
 class TestTimeCheck:
@@ -106,6 +101,7 @@ class TestTimeCheck:
     def test_delay_calculation(self):
         """测试延迟计算"""
         from datetime import datetime
+
         update_time = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
         current_time = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         delay = (current_time - update_time).total_seconds() / 3600
@@ -114,28 +110,21 @@ class TestTimeCheck:
 
 # ============ 数据质量检查测试 ============
 
+
 @pytest.mark.unit
 class TestDataQuality:
     """数据质量检查测试"""
 
     def test_completeness_check(self):
         """测试完整性检查"""
-        data = {
-            "temp": 25.0,
-            "humidity": 60,
-            "wind_speed": 3.5,
-            "weather_zh": "晴"
-        }
+        data = {"temp": 25.0, "humidity": 60, "wind_speed": 3.5, "weather_zh": "晴"}
         required_fields = ["temp", "humidity", "wind_speed", "weather_zh"]
         completeness = all(field in data for field in required_fields)
         assert completeness is True
 
     def test_missing_field_check(self):
         """测试缺失字段检查"""
-        data = {
-            "temp": 25.0,
-            "humidity": 60
-        }
+        data = {"temp": 25.0, "humidity": 60}
         required_fields = ["temp", "humidity", "wind_speed", "weather_zh"]
         missing_fields = [f for f in required_fields if f not in data]
         assert len(missing_fields) == 2
@@ -160,6 +149,7 @@ class TestDataQuality:
 
 
 # ============ 告警规则测试 ============
+
 
 @pytest.mark.unit
 class TestAlertRules:

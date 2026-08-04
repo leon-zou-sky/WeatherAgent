@@ -17,6 +17,7 @@ from app.models.schemas import (
 
 # ============ FeedbackRequest 测试 ============
 
+
 @pytest.mark.unit
 class TestFeedbackRequest:
     """反馈请求模型测试"""
@@ -24,10 +25,7 @@ class TestFeedbackRequest:
     def test_valid_request(self):
         """测试有效请求"""
         req = FeedbackRequest(
-            feedback_id="TEST001",
-            content="北京温度不准",
-            location="北京",
-            time="2024-01-15"
+            feedback_id="TEST001", content="北京温度不准", location="北京", time="2024-01-15"
         )
         assert req.feedback_id == "TEST001"
         assert req.content == "北京温度不准"
@@ -36,10 +34,7 @@ class TestFeedbackRequest:
 
     def test_minimal_request(self):
         """测试最小请求（只有必填字段）"""
-        req = FeedbackRequest(
-            feedback_id="TEST002",
-            content="温度不准"
-        )
+        req = FeedbackRequest(feedback_id="TEST002", content="温度不准")
         assert req.feedback_id == "TEST002"
         assert req.content == "温度不准"
         assert req.location is None
@@ -60,10 +55,7 @@ class TestFeedbackRequest:
     def test_optional_fields(self):
         """测试可选字段"""
         req = FeedbackRequest(
-            feedback_id="TEST004",
-            content="测试",
-            user_id="USER001",
-            source="APP"
+            feedback_id="TEST004", content="测试", user_id="USER001", source="APP"
         )
         assert req.user_id == "USER001"
         assert req.source == "APP"
@@ -76,7 +68,7 @@ class TestFeedbackRequest:
             time="2024-01-15 10:00:00",
             location="北京",
             user_id="USER001",
-            source="WEB"
+            source="WEB",
         )
         assert isinstance(req.feedback_id, str)
         assert isinstance(req.content, str)
@@ -85,6 +77,7 @@ class TestFeedbackRequest:
 
 
 # ============ WeatherData 测试 ============
+
 
 @pytest.mark.unit
 class TestWeatherData:
@@ -98,7 +91,7 @@ class TestWeatherData:
             temperature=25.0,
             humidity=60,
             wind_speed=3.5,
-            weather_zh="晴"
+            weather_zh="晴",
         )
         assert data.city_id == "101010100"
         assert data.temperature == 25.0
@@ -113,10 +106,7 @@ class TestWeatherData:
 
     def test_partial_data(self):
         """测试部分数据"""
-        data = WeatherData(
-            city_name="上海",
-            temperature=28.5
-        )
+        data = WeatherData(city_name="上海", temperature=28.5)
         assert data.city_name == "上海"
         assert data.temperature == 28.5
         assert data.humidity is None
@@ -138,6 +128,7 @@ class TestWeatherData:
 
 # ============ HourlyData 测试 ============
 
+
 @pytest.mark.unit
 class TestHourlyData:
     """逐时预报数据模型测试"""
@@ -150,7 +141,7 @@ class TestHourlyData:
             temperature=22.0,
             humidity=55,
             wind_speed=4.0,
-            weather_zh="多云"
+            weather_zh="多云",
         )
         assert data.city_id == "101010100"
         assert data.predict_time == "2024-01-15 10:00:00"
@@ -158,10 +149,7 @@ class TestHourlyData:
 
     def test_precipitation_fields(self):
         """测试降水相关字段"""
-        data = HourlyData(
-            pop=80.0,
-            precipitation=5.2
-        )
+        data = HourlyData(pop=80.0, precipitation=5.2)
         assert data.pop == 80.0
         assert data.precipitation == 5.2
 
@@ -173,6 +161,7 @@ class TestHourlyData:
 
 
 # ============ ForecastData 测试 ============
+
 
 @pytest.mark.unit
 class TestForecastData:
@@ -186,7 +175,7 @@ class TestForecastData:
             temp_high=5.0,
             temp_low=-3.0,
             weather_day="晴",
-            weather_night="多云"
+            weather_night="多云",
         )
         assert data.city_id == "101010100"
         assert data.predict_date == "2024-01-15"
@@ -195,18 +184,12 @@ class TestForecastData:
 
     def test_temperature_range(self):
         """测试温度范围"""
-        data = ForecastData(
-            temp_high=30.0,
-            temp_low=20.0
-        )
+        data = ForecastData(temp_high=30.0, temp_low=20.0)
         assert data.temp_high > data.temp_low
 
     def test_weather_fields(self):
         """测试天气字段"""
-        data = ForecastData(
-            weather_day="晴",
-            weather_night="阴"
-        )
+        data = ForecastData(weather_day="晴", weather_night="阴")
         assert data.weather_day == "晴"
         assert data.weather_night == "阴"
 
@@ -220,48 +203,33 @@ class TestForecastData:
 
 # ============ FeelsLikeResult 测试 ============
 
+
 @pytest.mark.unit
 class TestFeelsLikeResult:
     """体感温度结果模型测试"""
 
     def test_valid_result(self):
         """测试有效结果"""
-        result = FeelsLikeResult(
-            feels_like=27.5,
-            comfort="舒适",
-            description="体感温度适中"
-        )
+        result = FeelsLikeResult(feels_like=27.5, comfort="舒适", description="体感温度适中")
         assert result.feels_like == 27.5
         assert result.comfort == "舒适"
         assert result.description == "体感温度适中"
 
     def test_cold_scenario(self):
         """测试寒冷场景"""
-        result = FeelsLikeResult(
-            feels_like=-12.0,
-            comfort="寒冷",
-            description="体感温度很低"
-        )
+        result = FeelsLikeResult(feels_like=-12.0, comfort="寒冷", description="体感温度很低")
         assert result.feels_like < 0
         assert result.comfort == "寒冷"
 
     def test_hot_scenario(self):
         """测试炎热场景"""
-        result = FeelsLikeResult(
-            feels_like=42.0,
-            comfort="酷热",
-            description="体感温度很高"
-        )
+        result = FeelsLikeResult(feels_like=42.0, comfort="酷热", description="体感温度很高")
         assert result.feels_like > 40
         assert result.comfort == "酷热"
 
     def test_required_fields(self):
         """测试必填字段"""
-        result = FeelsLikeResult(
-            feels_like=20.0,
-            comfort="舒适",
-            description="正常"
-        )
+        result = FeelsLikeResult(feels_like=20.0, comfort="舒适", description="正常")
         assert result.feels_like == 20.0
         assert result.comfort == "舒适"
         assert result.description == "正常"
@@ -269,17 +237,14 @@ class TestFeelsLikeResult:
 
 # ============ 模型序列化测试 ============
 
+
 @pytest.mark.unit
 class TestModelSerialization:
     """模型序列化测试"""
 
     def test_feedback_request_dict(self):
         """测试FeedbackRequest转字典"""
-        req = FeedbackRequest(
-            feedback_id="TEST001",
-            content="测试",
-            location="北京"
-        )
+        req = FeedbackRequest(feedback_id="TEST001", content="测试", location="北京")
         data = req.model_dump()
         assert isinstance(data, dict)
         assert data["feedback_id"] == "TEST001"
@@ -287,20 +252,14 @@ class TestModelSerialization:
 
     def test_weather_data_dict(self):
         """测试WeatherData转字典"""
-        data = WeatherData(
-            city_name="北京",
-            temperature=25.0
-        )
+        data = WeatherData(city_name="北京", temperature=25.0)
         result = data.model_dump()
         assert isinstance(result, dict)
         assert result["city_name"] == "北京"
 
     def test_model_json(self):
         """测试模型转JSON"""
-        req = FeedbackRequest(
-            feedback_id="TEST001",
-            content="测试"
-        )
+        req = FeedbackRequest(feedback_id="TEST001", content="测试")
         json_str = req.model_dump_json()
         assert isinstance(json_str, str)
         assert "TEST001" in json_str

@@ -15,6 +15,7 @@ class TestHealthAPI:
     def test_health_endpoint(self):
         """测试健康检查接口"""
         from app.main import app
+
         client = TestClient(app)
         response = client.get("/health")
         assert response.status_code == 200
@@ -25,6 +26,7 @@ class TestHealthAPI:
     def test_docs_endpoint(self):
         """测试API文档接口"""
         from app.main import app
+
         client = TestClient(app)
         response = client.get("/docs")
         assert response.status_code == 200
@@ -41,7 +43,7 @@ class TestAnalyzeAPI:
             "feedback_id": "TEST001",
             "content": "北京温度不准",
             "location": "北京",
-            "time": "2024-01-15"
+            "time": "2024-01-15",
         }
 
         # 验证请求数据结构
@@ -53,16 +55,8 @@ class TestAnalyzeAPI:
         """测试批量分析接口结构"""
         request_data = {
             "feedbacks": [
-                {
-                    "feedback_id": "TEST001",
-                    "content": "温度不准",
-                    "location": "北京"
-                },
-                {
-                    "feedback_id": "TEST002",
-                    "content": "没收到预警",
-                    "location": "上海"
-                }
+                {"feedback_id": "TEST001", "content": "温度不准", "location": "北京"},
+                {"feedback_id": "TEST002", "content": "没收到预警", "location": "上海"},
             ]
         }
 
@@ -77,19 +71,13 @@ class TestQueryAPI:
     def test_weather_query_structure(self):
         """测试天气查询结构"""
         # 模拟查询参数
-        params = {
-            "location": "北京",
-            "time": "2024-01-15"
-        }
+        params = {"location": "北京", "time": "2024-01-15"}
         assert "location" in params
         assert "time" in params
 
     def test_alert_query_structure(self):
         """测试预警查询结构"""
-        params = {
-            "location": "北京",
-            "time": "2024-01-15"
-        }
+        params = {"location": "北京", "time": "2024-01-15"}
         assert "location" in params
         assert "time" in params
 
@@ -101,7 +89,7 @@ class TestQueryAPI:
             "status": "completed",
             "feedback_type": "温度偏差",
             "root_cause": "数据源延迟",
-            "reply_content": "您好，经核实..."
+            "reply_content": "您好，经核实...",
         }
         assert result["status"] == "completed"
         assert result["feedback_type"] is not None
@@ -127,6 +115,7 @@ class TestErrorHandling:
     def test_not_found_resource(self):
         """测试资源不存在"""
         from app.main import app
+
         client = TestClient(app)
 
         # 查询不存在的分析结果
@@ -145,11 +134,7 @@ class TestDataValidation:
         from app.models.schemas import FeedbackRequest
 
         # 有效数据
-        valid_data = {
-            "feedback_id": "TEST001",
-            "content": "温度不准",
-            "location": "北京"
-        }
+        valid_data = {"feedback_id": "TEST001", "content": "温度不准", "location": "北京"}
         req = FeedbackRequest(**valid_data)
         assert req.feedback_id == "TEST001"
 
@@ -162,11 +147,7 @@ class TestDataValidation:
         from app.models.schemas import WeatherData
 
         # 有效响应
-        valid_response = {
-            "city_name": "北京",
-            "temperature": 25.0,
-            "humidity": 60
-        }
+        valid_response = {"city_name": "北京", "temperature": 25.0, "humidity": 60}
         data = WeatherData(**valid_response)
         assert data.city_name == "北京"
         assert data.temperature == 25.0
