@@ -27,11 +27,13 @@ _embed_model = None
 
 # ============ Embedding 模型 ============
 
+
 def _get_embed_model():
     global _embed_model
     if _embed_model is None:
         try:
             from sentence_transformers import SentenceTransformer
+
             _embed_model = SentenceTransformer(_MODEL_PATH)
             logger.info(f"[Knowledge] Embedding 模型加载成功: {_MODEL_PATH}")
         except Exception as e:
@@ -49,13 +51,15 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
 
 # ============ Milvus 向量检索 ============
 
+
 def _get_milvus_client():
     global _milvus_client
     if _milvus_client is None:
         try:
             from pymilvus import MilvusClient
+
             _milvus_client = MilvusClient(_MILVUS_DB)
-            logger.info(f"[Knowledge] Milvus 连接成功")
+            logger.info("[Knowledge] Milvus 连接成功")
         except Exception as e:
             logger.warning(f"[Knowledge] Milvus 连接失败: {e}")
     return _milvus_client
@@ -79,7 +83,15 @@ def _vector_search(query: str, top_k: int = 3) -> list[KnowledgeResult]:
             collection_name=_COLLECTION,
             data=query_vec,
             limit=top_k,
-            output_fields=["module", "problem_pattern", "problem_desc", "root_cause", "solution", "tags", "severity"],
+            output_fields=[
+                "module",
+                "problem_pattern",
+                "problem_desc",
+                "root_cause",
+                "solution",
+                "tags",
+                "severity",
+            ],
         )
 
         items = []
@@ -100,6 +112,7 @@ def _vector_search(query: str, top_k: int = 3) -> list[KnowledgeResult]:
 
 # ============ 关键词匹配（兜底） ============
 
+
 def _load_csv() -> list[dict]:
     global _kb_cache
     if _kb_cache is not None:
@@ -110,18 +123,20 @@ def _load_csv() -> list[dict]:
         return _kb_cache
 
     _kb_cache = []
-    with open(_CSV_PATH, "r", encoding="utf-8") as f:
+    with open(_CSV_PATH, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            _kb_cache.append({
-                "module": row.get("module", ""),
-                "problem_pattern": row.get("problem_pattern", ""),
-                "problem_desc": row.get("problem_desc", ""),
-                "root_cause": row.get("root_cause", ""),
-                "solution": row.get("solution", ""),
-                "tags": row.get("tags", ""),
-                "severity": row.get("severity", ""),
-            })
+            _kb_cache.append(
+                {
+                    "module": row.get("module", ""),
+                    "problem_pattern": row.get("problem_pattern", ""),
+                    "problem_desc": row.get("problem_desc", ""),
+                    "root_cause": row.get("root_cause", ""),
+                    "solution": row.get("solution", ""),
+                    "tags": row.get("tags", ""),
+                    "severity": row.get("severity", ""),
+                }
+            )
     return _kb_cache
 
 
@@ -133,12 +148,24 @@ def _extract_keywords(text: str) -> list[str]:
     text_clean = text.replace(" ", "").lower()
     for n in (4, 3, 2):
         for i in range(len(text_clean) - n + 1):
-            keywords.add(text_clean[i:i+n])
+            keywords.add(text_clean[i : i + n])
     return list(keywords)
 
 
 _PATTERN_KEYWORDS = {
-    "数据偏差": ["不准", "不对", "偏差", "误差", "偏高", "偏低", "偏大", "偏小", "不符", "不一致", "对不上"],
+    "数据偏差": [
+        "不准",
+        "不对",
+        "偏差",
+        "误差",
+        "偏高",
+        "偏低",
+        "偏大",
+        "偏小",
+        "不符",
+        "不一致",
+        "对不上",
+    ],
     "时效延迟": ["延迟", "不及时", "慢", "晚", "迟", "没更新", "更新慢"],
     "时空误差": ["位置", "定位", "落区", "时间", "早了", "晚了"],
     "认知偏差": ["不懂", "什么意思", "怎么算", "为啥", "为什么", "怎么看"],
@@ -207,6 +234,7 @@ def _keyword_search(query: str, top_k: int = 3) -> list[KnowledgeResult]:
 
 
 # ============ 对外接口 ============
+
 
 async def search_knowledge(query: str, top_k: int = 3) -> list[KnowledgeResult]:
     """

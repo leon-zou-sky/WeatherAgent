@@ -16,8 +16,9 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from downloader.models import get_engine, create_tables, get_session
-from downloader.fetcher import fetch_condition, fetch_hourly, fetch_forecast
+
+from downloader.fetcher import fetch_condition, fetch_forecast, fetch_hourly
+from downloader.models import create_tables, get_engine, get_session
 
 # 加载项目根目录的 .env.example
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.example")
@@ -65,9 +66,9 @@ def run_download(engine, api_key: str, data_type: str):
     types = [data_type] if data_type != "all" else list(fetchers.keys())
 
     for t in types:
-        logger.info(f"{'='*40}")
+        logger.info(f"{'=' * 40}")
         logger.info(f"开始下载: {t}")
-        logger.info(f"{'='*40}")
+        logger.info(f"{'=' * 40}")
         # if t!='forecast':
         #     continue
         try:
@@ -80,8 +81,10 @@ def run_download(engine, api_key: str, data_type: str):
 def main():
     parser = argparse.ArgumentParser(description="北京局气象数据下载器")
     parser.add_argument(
-        "--type", choices=["all", "condition", "hourly", "forecast"],
-        default="all", help="下载数据类型"
+        "--type",
+        choices=["all", "condition", "hourly", "forecast"],
+        default="all",
+        help="下载数据类型",
     )
     parser.add_argument("--init-db", action="store_true", help="只建表不下载")
     args = parser.parse_args()

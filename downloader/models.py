@@ -8,9 +8,18 @@ alert_data    预警数据
 """
 
 from datetime import datetime
+
 from sqlalchemy import (
-    create_engine, Column, BigInteger, Integer, Float, String, Text, DateTime,
-    Index, UniqueConstraint
+    BigInteger,
+    Column,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    create_engine,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -19,6 +28,7 @@ Base = declarative_base()
 
 class City(Base):
     """城市表"""
+
     __tablename__ = "city"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -33,6 +43,7 @@ class City(Base):
 
 class WeatherCondition(Base):
     """实况数据表（condition_beijing_v2）"""
+
     __tablename__ = "weather_cn"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -53,13 +64,12 @@ class WeatherCondition(Base):
     wind_degrees = Column(Float, comment="风向角度")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        Index("idx_cn_city_time", "city_id", "get_time"),
-    )
+    __table_args__ = (Index("idx_cn_city_time", "city_id", "get_time"),)
 
 
 class WeatherHourly(Base):
     """逐时预报表（hourly_beijing_v2）"""
+
     __tablename__ = "weather_hh"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -83,13 +93,12 @@ class WeatherHourly(Base):
     vis = Column(Float, comment="能见度(km)")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        Index("idx_hh_city_time", "city_id", "predict_timestamp"),
-    )
+    __table_args__ = (Index("idx_hh_city_time", "city_id", "predict_timestamp"),)
 
 
 class WeatherForecast(Base):
     """逐天预报表（forecast_beijing_v2）"""
+
     __tablename__ = "weather_ff"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -121,13 +130,12 @@ class WeatherForecast(Base):
     mslp_night = Column(Float, comment="夜间海平面气压(hPa)")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        Index("idx_ff_city_date", "city_id", "predict_date"),
-    )
+    __table_args__ = (Index("idx_ff_city_date", "city_id", "predict_date"),)
 
 
 class AlertData(Base):
     """预警数据表"""
+
     __tablename__ = "alert_data"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -153,6 +161,7 @@ class AlertData(Base):
 
 class AnalysisResult(Base):
     """分析结果表"""
+
     __tablename__ = "analysis_result"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -194,6 +203,7 @@ class AnalysisResult(Base):
 
 class AQICity(Base):
     """城市 AQI 实况数据表"""
+
     __tablename__ = "aqi_city"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -224,6 +234,7 @@ class AQICity(Base):
 
 class AQIStation(Base):
     """监测站 AQI 实况数据表"""
+
     __tablename__ = "aqi_station"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -254,9 +265,54 @@ class AQIStation(Base):
     )
 
 
+class WeatherIconV2(Base):
+    """天气现象映射表 v2（完整版）"""
+
+    __tablename__ = "weather_icon_v2"
+
+    id = Column(Integer, primary_key=True, autoincrement=False, comment="主键ID")
+    weather_code = Column(Integer, comment="天气代码")
+    bg_code = Column(Integer, comment="背景代码")
+    icon_day = Column(Integer, comment="白天图标")
+    icon_night = Column(Integer, comment="夜间图标")
+    condition_zh = Column(String(64), comment="天气现象中文")
+    condition_en = Column(String(128), comment="天气现象英文")
+    condition_enin = Column(String(128), comment="天气现象英文(印度)")
+    condition_enph = Column(String(128), comment="天气现象英文(菲律宾)")
+    condition_tw = Column(String(64), comment="天气现象繁体(台湾)")
+    condition_hk = Column(String(64), comment="天气现象繁体(香港)")
+    condition_es = Column(String(128), comment="天气现象西班牙语")
+    condition_pt = Column(String(128), comment="天气现象葡萄牙语")
+    condition_ru = Column(String(128), comment="天气现象俄语")
+    condition_fr = Column(String(128), comment="天气现象法语")
+    condition_de = Column(String(128), comment="天气现象德语")
+    condition_ar = Column(String(128), comment="天气现象阿拉伯语")
+    condition_ko = Column(String(128), comment="天气现象韩语")
+    condition_ja = Column(String(128), comment="天气现象日语")
+    condition_hi = Column(String(128), comment="天气现象印地语")
+    condition_te = Column(String(128), comment="天气现象泰卢固语")
+    accu_icon = Column(Integer, comment="AccuWeather图标")
+    accu_condition = Column(String(128), comment="AccuWeather天气现象")
+    weathercn_icon1 = Column(String(64), comment="中国天气网图标1")
+    weathercn_icon2 = Column(String(64), comment="中国天气网图标2")
+    wunder_condition = Column(String(128), comment="WeatherUnderground天气现象")
+    wunder_icon = Column(String(64), comment="WeatherUnderground图标")
+    condition_kr = Column(String(128), comment="天气现象韩语(备用)")
+    smartweather = Column(Integer, comment="SmartWeather代码")
+    condition_tm = Column(String(128), comment="天气现象土库曼语")
+
+    __table_args__ = (
+        Index("idx_v2_weather_code", "weather_code"),
+        Index("idx_v2_condition_zh", "condition_zh"),
+    )
+
+
 # ============ 数据库连接工具 ============
 
-def get_engine(url: str = None, host="localhost", port=3306, user="root", password="", db="weather"):
+
+def get_engine(
+    url: str = None, host="localhost", port=3306, user="root", password="", db="weather"
+):
     if url is None:
         url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{db}?charset=utf8mb4"
     return create_engine(url, pool_size=5, pool_recycle=3600)

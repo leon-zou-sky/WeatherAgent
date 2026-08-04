@@ -5,11 +5,11 @@ Skill 3: 气象数据查询
 
 from sqlalchemy import text
 
-from app.models.schemas import WeatherData, HourlyData, ForecastData
+from app.models.schemas import ForecastData, HourlyData, WeatherData
 from app.skills.db import get_session
 
-
 # ============ 城市名 → city_id 映射 ============
+
 
 def _resolve_city_id(location: str) -> str | None:
     """城市名转 city_id，如果传入的已是 ID 则直接返回"""
@@ -30,9 +30,8 @@ def _resolve_city_id(location: str) -> str | None:
 
 # ============ 实况数据 ============
 
-async def query_weather_data(
-    location: str, time: str = "", data_type: str = "all"
-) -> WeatherData:
+
+async def query_weather_data(location: str, time: str = "", data_type: str = "all") -> WeatherData:
     """
     查询实况气象数据
 
@@ -94,9 +93,8 @@ async def query_weather_data(
 
 # ============ 逐时预报 ============
 
-async def query_hourly_data(
-    location: str, hours: int = 24
-) -> list[HourlyData]:
+
+async def query_hourly_data(location: str, hours: int = 24) -> list[HourlyData]:
     """
     查询逐时预报数据
 
@@ -147,9 +145,8 @@ async def query_hourly_data(
 
 # ============ 逐天预报 ============
 
-async def query_forecast_data(
-    location: str, days: int = 15
-) -> list[ForecastData]:
+
+async def query_forecast_data(location: str, days: int = 15) -> list[ForecastData]:
     """
     查询逐天预报数据
 

@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqlalchemy import text
+
 from app.skills.db import get_session
 
 
@@ -28,21 +29,25 @@ def check_data_delay() -> list[dict]:
 
     try:
         for table, id_col, time_col, desc, interval in tables:
-            row = session.execute(text(f"""
+            row = session.execute(
+                text(f"""
                 SELECT COUNT(*) as total,
                        COUNT(DISTINCT {id_col}) as city_count,
                        MAX({time_col}) as latest
                 FROM {table}
-            """)).fetchone()
+            """)
+            ).fetchone()
 
-            results.append({
-                "table": table,
-                "desc": desc,
-                "total": row[0],
-                "city_count": row[1],
-                "latest": str(row[2]),
-                "expected_interval": interval,
-            })
+            results.append(
+                {
+                    "table": table,
+                    "desc": desc,
+                    "total": row[0],
+                    "city_count": row[1],
+                    "latest": str(row[2]),
+                    "expected_interval": interval,
+                }
+            )
     finally:
         session.close()
 
@@ -66,24 +71,28 @@ def check_data_completeness() -> list[dict]:
 
     try:
         for table, field, desc in checks:
-            row = session.execute(text(f"""
+            row = session.execute(
+                text(f"""
                 SELECT COUNT(*) as total,
                        SUM(CASE WHEN {field} IS NULL THEN 1 ELSE 0 END) as null_count
                 FROM {table}
-            """)).fetchone()
+            """)
+            ).fetchone()
 
             total = row[0]
             null_count = row[1] or 0
             null_rate = null_count / total if total > 0 else 0
 
-            results.append({
-                "table": table,
-                "field": desc,
-                "total": total,
-                "null_count": null_count,
-                "null_rate": f"{null_rate:.2%}",
-                "status": "正常" if null_rate < 0.05 else "异常",
-            })
+            results.append(
+                {
+                    "table": table,
+                    "field": desc,
+                    "total": total,
+                    "null_count": null_count,
+                    "null_rate": f"{null_rate:.2%}",
+                    "status": "正常" if null_rate < 0.05 else "异常",
+                }
+            )
     finally:
         session.close()
 
@@ -98,10 +107,18 @@ def check_city_coverage() -> dict:
         city_total = session.execute(text("SELECT COUNT(*) FROM city")).fetchone()[0]
 
         # 各表覆盖的城市数
-        cn_cities = session.execute(text("SELECT COUNT(DISTINCT city_id) FROM weather_cn")).fetchone()[0]
-        hh_cities = session.execute(text("SELECT COUNT(DISTINCT city_id) FROM weather_hh")).fetchone()[0]
-        ff_cities = session.execute(text("SELECT COUNT(DISTINCT city_id) FROM weather_ff")).fetchone()[0]
-        alert_cities = session.execute(text("SELECT COUNT(DISTINCT city_id) FROM alert_data")).fetchone()[0]
+        cn_cities = session.execute(
+            text("SELECT COUNT(DISTINCT city_id) FROM weather_cn")
+        ).fetchone()[0]
+        hh_cities = session.execute(
+            text("SELECT COUNT(DISTINCT city_id) FROM weather_hh")
+        ).fetchone()[0]
+        ff_cities = session.execute(
+            text("SELECT COUNT(DISTINCT city_id) FROM weather_ff")
+        ).fetchone()[0]
+        alert_cities = session.execute(
+            text("SELECT COUNT(DISTINCT city_id) FROM alert_data")
+        ).fetchone()[0]
 
         return {
             "city_total": city_total,
@@ -119,27 +136,33 @@ def check_alert_status() -> dict:
     session = get_session()
     try:
         # 当前生效预警数
-        active = session.execute(text("""
+        active = session.execute(
+            text("""
             SELECT COUNT(*) FROM alert_data WHERE end_time >= NOW()
-        """)).fetchone()[0]
+        """)
+        ).fetchone()[0]
 
         # 预警类型分布
-        type_dist = session.execute(text("""
+        type_dist = session.execute(
+            text("""
             SELECT alert_type, COUNT(*) as cnt
             FROM alert_data
             WHERE end_time >= NOW()
             GROUP BY alert_type
             ORDER BY cnt DESC
-        """)).fetchall()
+        """)
+        ).fetchall()
 
         # 预警级别分布
-        level_dist = session.execute(text("""
+        level_dist = session.execute(
+            text("""
             SELECT alert_level, COUNT(*) as cnt
             FROM alert_data
             WHERE end_time >= NOW()
             GROUP BY alert_level
             ORDER BY cnt DESC
-        """)).fetchall()
+        """)
+        ).fetchall()
 
         return {
             "active_count": active,
@@ -161,8 +184,10 @@ async def generate_report():
     print("-" * 40)
     delays = check_data_delay()
     for d in delays:
-        print(f"  {d['desc']:10} ({d['table']:12}): {d['total']:6}条, "
-              f"{d['city_count']:3}个城市, 最新: {d['latest']}")
+        print(
+            f"  {d['desc']:10} ({d['table']:12}): {d['total']:6}条, "
+            f"{d['city_count']:3}个城市, 最新: {d['latest']}"
+        )
 
     # 2. 数据完整性检查
     print("\n📌 二、数据完整性检查")
@@ -170,8 +195,10 @@ async def generate_report():
     completeness = check_data_completeness()
     for c in completeness:
         status_icon = "✅" if c["status"] == "正常" else "❌"
-        print(f"  {status_icon} {c['table']:12} {c['field']:6}: "
-              f"总计{c['total']:6}, 空值{c['null_count']:4}, 空值率{c['null_rate']}")
+        print(
+            f"  {status_icon} {c['table']:12} {c['field']:6}: "
+            f"总计{c['total']:6}, 空值{c['null_count']:4}, 空值率{c['null_rate']}"
+        )
 
     # 3. 城市覆盖检查
     print("\n📌 三、城市覆盖检查")

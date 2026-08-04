@@ -4,7 +4,6 @@
 """
 
 import logging
-from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -19,8 +18,10 @@ router = APIRouter(prefix="/analysis", tags=["分析结果"])
 
 # ============ 请求模型 ============
 
+
 class ReviewRequest(BaseModel):
     """审核请求"""
+
     analysis_id: str
     action: str  # approved / rejected
     reviewer: str
@@ -29,6 +30,7 @@ class ReviewRequest(BaseModel):
 
 class AnalysisQuery(BaseModel):
     """查询条件"""
+
     status: str = None
     location: str = None
     feedback_type: str = None
@@ -39,6 +41,7 @@ class AnalysisQuery(BaseModel):
 
 
 # ============ 接口 ============
+
 
 @router.get("/list", summary="查询分析结果列表")
 async def list_analysis(
@@ -98,24 +101,28 @@ async def list_analysis(
 
         results = []
         for r in rows:
-            results.append({
-                "analysis_id": r[0],
-                "feedback_id": r[1],
-                "feedback_content": r[2][:50] + "..." if r[2] and len(r[2]) > 50 else r[2],
-                "location": r[3],
-                "feedback_type": r[4],
-                "root_cause": r[5][:100] + "..." if r[5] and len(r[5]) > 100 else r[5],
-                "reply_content": r[6][:100] + "..." if r[6] and len(r[6]) > 100 else r[6],
-                "status": r[7],
-                "reviewer": r[8],
-                "review_time": str(r[9]) if r[9] else None,
-                "created_at": str(r[10]),
-                "alert": {
-                    "type": r[11],
-                    "level": r[12],
-                    "time": r[13],
-                } if r[11] else None,
-            })
+            results.append(
+                {
+                    "analysis_id": r[0],
+                    "feedback_id": r[1],
+                    "feedback_content": r[2][:50] + "..." if r[2] and len(r[2]) > 50 else r[2],
+                    "location": r[3],
+                    "feedback_type": r[4],
+                    "root_cause": r[5][:100] + "..." if r[5] and len(r[5]) > 100 else r[5],
+                    "reply_content": r[6][:100] + "..." if r[6] and len(r[6]) > 100 else r[6],
+                    "status": r[7],
+                    "reviewer": r[8],
+                    "review_time": str(r[9]) if r[9] else None,
+                    "created_at": str(r[10]),
+                    "alert": {
+                        "type": r[11],
+                        "level": r[12],
+                        "time": r[13],
+                    }
+                    if r[11]
+                    else None,
+                }
+            )
 
         return {
             "code": 200,
@@ -140,7 +147,8 @@ async def get_analysis_detail(analysis_id: str):
     """
     session = get_session()
     try:
-        row = session.execute(text("""
+        row = session.execute(
+            text("""
             SELECT analysis_id, feedback_id, feedback_content, location,
                    user_id, source, feedback_type, root_cause,
                    meteorological_explanation, suggestion, reply_content,
@@ -150,7 +158,9 @@ async def get_analysis_detail(analysis_id: str):
                    alert_type, alert_level, alert_time
             FROM analysis_result
             WHERE analysis_id = :aid
-        """), {"aid": analysis_id}).fetchone()
+        """),
+            {"aid": analysis_id},
+        ).fetchone()
 
         if not row:
             raise HTTPException(status_code=404, detail="分析结果不存在")
@@ -179,7 +189,9 @@ async def get_analysis_detail(analysis_id: str):
                     "type": row[21],
                     "level": row[22],
                     "time": row[23],
-                } if row[21] else None,
+                }
+                if row[21]
+                else None,
                 "status": row[15],
                 "reviewer": row[16],
                 "review_time": str(row[17]) if row[17] else None,
@@ -214,18 +226,24 @@ async def review_analysis(req: ReviewRequest):
     session = get_session()
     try:
         # 查询是否存在
-        row = session.execute(text("""
+        row = session.execute(
+            text("""
             SELECT status FROM analysis_result WHERE analysis_id = :aid
-        """), {"aid": req.analysis_id}).fetchone()
+        """),
+            {"aid": req.analysis_id},
+        ).fetchone()
 
         if not row:
             raise HTTPException(status_code=404, detail="分析结果不存在")
 
         if row[0] != "pending":
-            raise HTTPException(status_code=400, detail=f"当前状态 {row[0]}，只能审核 pending 状态的记录")
+            raise HTTPException(
+                status_code=400, detail=f"当前状态 {row[0]}，只能审核 pending 状态的记录"
+            )
 
         # 更新状态
-        session.execute(text("""
+        session.execute(
+            text("""
             UPDATE analysis_result
             SET status = :status,
                 reviewer = :reviewer,
@@ -233,12 +251,14 @@ async def review_analysis(req: ReviewRequest):
                 review_comment = :comment,
                 updated_at = NOW()
             WHERE analysis_id = :aid
-        """), {
-            "status": req.action,
-            "reviewer": req.reviewer,
-            "comment": req.comment,
-            "aid": req.analysis_id,
-        })
+        """),
+            {
+                "status": req.action,
+                "reviewer": req.reviewer,
+                "comment": req.comment,
+                "aid": req.analysis_id,
+            },
+        )
         session.commit()
 
         return {
@@ -270,10 +290,13 @@ async def send_reply(analysis_id: str):
     """
     session = get_session()
     try:
-        row = session.execute(text("""
+        row = session.execute(
+            text("""
             SELECT status, reply_content, feedback_id
             FROM analysis_result WHERE analysis_id = :aid
-        """), {"aid": analysis_id}).fetchone()
+        """),
+            {"aid": analysis_id},
+        ).fetchone()
 
         if not row:
             raise HTTPException(status_code=404, detail="分析结果不存在")
@@ -285,11 +308,14 @@ async def send_reply(analysis_id: str):
         # send_notification(row[2], row[1])
 
         # 更新状态为已发送
-        session.execute(text("""
+        session.execute(
+            text("""
             UPDATE analysis_result
             SET status = 'sent', updated_at = NOW()
             WHERE analysis_id = :aid
-        """), {"aid": analysis_id})
+        """),
+            {"aid": analysis_id},
+        )
         session.commit()
 
         return {
@@ -314,26 +340,32 @@ async def get_stats():
     session = get_session()
     try:
         # 各状态数量
-        stats = session.execute(text("""
+        stats = session.execute(
+            text("""
             SELECT status, COUNT(*) as cnt
             FROM analysis_result
             GROUP BY status
-        """)).fetchall()
+        """)
+        ).fetchall()
 
         # 今日新增
-        today_count = session.execute(text("""
+        today_count = session.execute(
+            text("""
             SELECT COUNT(*) FROM analysis_result
             WHERE DATE(created_at) = CURDATE()
-        """)).fetchone()[0]
+        """)
+        ).fetchone()[0]
 
         # 问题类型分布
-        type_dist = session.execute(text("""
+        type_dist = session.execute(
+            text("""
             SELECT feedback_type, COUNT(*) as cnt
             FROM analysis_result
             GROUP BY feedback_type
             ORDER BY cnt DESC
             LIMIT 10
-        """)).fetchall()
+        """)
+        ).fetchall()
 
         return {
             "code": 200,

@@ -32,9 +32,7 @@ def _load_mapping() -> dict:
 
     engine = _get_engine()
     with engine.connect() as conn:
-        rows = conn.execute(text(
-            "SELECT weather_id, condition_zh FROM weather_icon"
-        )).fetchall()
+        rows = conn.execute(text("SELECT weather_id, condition_zh FROM weather_icon")).fetchall()
         _cache = {str(r[0]): r[1] for r in rows}
     return _cache
 

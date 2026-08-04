@@ -11,7 +11,6 @@ RAG 检索质量评估脚本
 import asyncio
 import json
 import sys
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -27,7 +26,7 @@ DEFAULT_THRESHOLD = 90  # 默认命中率阈值
 
 def load_dataset() -> list[dict]:
     """加载测试集"""
-    with open(DATASET_PATH, "r", encoding="utf-8") as f:
+    with open(DATASET_PATH, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -120,8 +119,8 @@ def generate_report(report: dict, threshold: float) -> str:
     lines.append("")
 
     # 总体结果
-    top1 = report['top1_rate'] * 100
-    top3 = report['top3_rate'] * 100
+    top1 = report["top1_rate"] * 100
+    top3 = report["top3_rate"] * 100
     status1 = "✅" if top1 >= threshold else "⚠️"
     status3 = "✅" if top3 >= threshold else "⚠️"
 
@@ -137,7 +136,9 @@ def generate_report(report: dict, threshold: float) -> str:
     for module, stats in report["module_stats"].items():
         m_top1 = stats["top1_hit"] / stats["total"] * 100 if stats["total"] > 0 else 0
         m_top3 = stats["top3_hit"] / stats["total"] * 100 if stats["total"] > 0 else 0
-        lines.append(f"  {module:12} Top-1: {m_top1:5.1f}%  Top-3: {m_top3:5.1f}%  ({stats['total']}条)")
+        lines.append(
+            f"  {module:12} Top-1: {m_top1:5.1f}%  Top-3: {m_top3:5.1f}%  ({stats['total']}条)"
+        )
     lines.append("")
 
     # Badcase
@@ -145,7 +146,7 @@ def generate_report(report: dict, threshold: float) -> str:
         lines.append(f"❌ Badcase ({len(report['badcases'])} 条)")
         lines.append("-" * 40)
         for bc in report["badcases"][:10]:  # 最多显示 10 条
-            lines.append(f"  查询: \"{bc['query']}\"")
+            lines.append(f'  查询: "{bc["query"]}"')
             lines.append(f"    期望: {bc['expected_module']}")
             lines.append(f"    检索: {bc['retrieved_modules']}")
             lines.append("")
@@ -186,6 +187,7 @@ def save_report(report_text: str, report: dict):
 
 async def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="RAG 检索质量评估")
     parser.add_argument("--report", action="store_true", help="生成报告文件")
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="命中率阈值")

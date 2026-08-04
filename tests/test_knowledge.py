@@ -10,7 +10,7 @@ from pathlib import Path
 # 添加项目根目录到 path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.skills.knowledge import search_knowledge, _vector_search, _keyword_search
+from app.skills.knowledge import _keyword_search, _vector_search, search_knowledge
 
 
 async def test_vector_search():
@@ -32,7 +32,7 @@ async def test_vector_search():
 
     for query, desc in cases:
         results = _vector_search(query, top_k=2)
-        print(f"\n查询: \"{query}\" ({desc})")
+        print(f'\n查询: "{query}" ({desc})')
         if results:
             for r in results:
                 print(f"  [{r.score:.2f}] {r.content}")
@@ -54,7 +54,7 @@ async def test_keyword_search():
 
     for query, desc in cases:
         results = _keyword_search(query, top_k=2)
-        print(f"\n查询: \"{query}\" ({desc})")
+        print(f'\n查询: "{query}" ({desc})')
         if results:
             for r in results:
                 print(f"  [{r.score:.2f}] {r.content}")
@@ -79,7 +79,7 @@ async def test_search_knowledge():
 
     for query in cases:
         results = await search_knowledge(query, top_k=2)
-        print(f"\n查询: \"{query}\" → {len(results)} 条结果")
+        print(f'\n查询: "{query}" → {len(results)} 条结果')
         for r in results:
             print(f"  [{r.score:.2f}] {r.content}")
             print(f"    方案: {r.solution[:50]}...")

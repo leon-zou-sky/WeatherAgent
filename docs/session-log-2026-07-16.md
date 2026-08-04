@@ -59,6 +59,7 @@
 
 ```python
 from app.skills.db import get_session
+
 session = get_session()
 # 查询...
 session.close()

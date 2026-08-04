@@ -65,7 +65,9 @@ async def query_alert_data(location: str, time: str = "") -> AlertData:
             alert_level=row[3],
             alert_time=row[6],
             # 额外信息存到 detail
-            detail=f"[{row[4]}] {row[5][:100]}..." if row[5] and len(row[5]) > 100 else f"[{row[4]}] {row[5]}",
+            detail=f"[{row[4]}] {row[5][:100]}..."
+            if row[5] and len(row[5]) > 100
+            else f"[{row[4]}] {row[5]}",
         )
     finally:
         session.close()

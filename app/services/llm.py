@@ -60,8 +60,7 @@ class LLMService:
             # 处理 Function Calling 响应
             if message.tool_calls:
                 logger.info(
-                    f"[LLM] 模型请求调用工具: "
-                    f"{[tc.function.name for tc in message.tool_calls]}"
+                    f"[LLM] 模型请求调用工具: {[tc.function.name for tc in message.tool_calls]}"
                 )
 
             result = {

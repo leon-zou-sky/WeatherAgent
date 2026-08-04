@@ -9,8 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.models.schemas import FeedbackRequest
 from app.agent.core import get_agent
+from app.models.schemas import FeedbackRequest
 
 
 async def test_analyze():
@@ -42,23 +42,23 @@ async def test_analyze():
     print(f"  问题类型: {result.feedback_type}")
     print(f"  问题定位: {result.problem_location}")
     print(f"  根因: {result.root_cause}")
-    print(f"\n实况数据:")
+    print("\n实况数据:")
     print(f"  温度: {result.actual_data.temperature}℃")
     print(f"  湿度: {result.actual_data.humidity}%")
     print(f"  风速: {result.actual_data.wind_speed}m/s")
-    print(f"\n体感分析:")
+    print("\n体感分析:")
     if result.feels_like:
         print(f"  体感温度: {result.feels_like.feels_like}℃")
         print(f"  舒适度: {result.feels_like.comfort}")
         print(f"  说明: {result.feels_like.description}")
-    print(f"\n预警信息:")
+    print("\n预警信息:")
     if result.alert_data:
         print(f"  有预警: {result.alert_data.alert_type} {result.alert_data.alert_level}")
         print(f"  时间: {result.alert_data.alert_time}")
         if result.alert_data.detail:
             print(f"  详情: {result.alert_data.detail[:80]}...")
     else:
-        print(f"  无生效预警")
+        print("  无生效预警")
     print(f"\n气象解释: {result.meteorological_explanation}")
     print(f"\n建议: {result.suggestion}")
     print(f"\n回复内容: {result.reply_content}")

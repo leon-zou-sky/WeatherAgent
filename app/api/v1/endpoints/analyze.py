@@ -12,12 +12,12 @@ from sqlalchemy import text
 
 from app.agent.core import get_agent
 from app.models.schemas import (
-    FeedbackRequest,
-    BatchAnalyzeRequest,
-    AnalysisResponse,
-    BatchAnalysisResponse,
     AnalysisQueryResponse,
+    AnalysisResponse,
     AnalysisResult,
+    BatchAnalysisResponse,
+    BatchAnalyzeRequest,
+    FeedbackRequest,
 )
 from app.skills.db import get_session
 
@@ -28,7 +28,8 @@ def _save_analysis_result(feedback: FeedbackRequest, result: AnalysisResult):
     """保存分析结果到数据库"""
     session = get_session()
     try:
-        session.execute(text("""
+        session.execute(
+            text("""
             INSERT INTO analysis_result
             (analysis_id, feedback_id, feedback_content, location, user_id, source,
              feedback_type, root_cause, meteorological_explanation, suggestion, reply_content,
@@ -41,26 +42,28 @@ def _save_analysis_result(feedback: FeedbackRequest, result: AnalysisResult):
              :actual_temp, :actual_humidity, :actual_wind_speed, :feels_like,
              :alert_type, :alert_level, :alert_time,
              'pending', NOW(), NOW())
-        """), {
-            "analysis_id": result.analysis_id,
-            "feedback_id": feedback.feedback_id,
-            "feedback_content": feedback.content,
-            "location": feedback.location,
-            "user_id": feedback.user_id,
-            "source": feedback.source,
-            "feedback_type": result.feedback_type,
-            "root_cause": result.root_cause,
-            "meteorological_explanation": result.meteorological_explanation,
-            "suggestion": result.suggestion,
-            "reply_content": result.reply_content,
-            "actual_temp": result.actual_data.temperature if result.actual_data else None,
-            "actual_humidity": result.actual_data.humidity if result.actual_data else None,
-            "actual_wind_speed": result.actual_data.wind_speed if result.actual_data else None,
-            "feels_like": result.feels_like.feels_like if result.feels_like else None,
-            "alert_type": result.alert_data.alert_type if result.alert_data else None,
-            "alert_level": result.alert_data.alert_level if result.alert_data else None,
-            "alert_time": result.alert_data.alert_time if result.alert_data else None,
-        })
+        """),
+            {
+                "analysis_id": result.analysis_id,
+                "feedback_id": feedback.feedback_id,
+                "feedback_content": feedback.content,
+                "location": feedback.location,
+                "user_id": feedback.user_id,
+                "source": feedback.source,
+                "feedback_type": result.feedback_type,
+                "root_cause": result.root_cause,
+                "meteorological_explanation": result.meteorological_explanation,
+                "suggestion": result.suggestion,
+                "reply_content": result.reply_content,
+                "actual_temp": result.actual_data.temperature if result.actual_data else None,
+                "actual_humidity": result.actual_data.humidity if result.actual_data else None,
+                "actual_wind_speed": result.actual_data.wind_speed if result.actual_data else None,
+                "feels_like": result.feels_like.feels_like if result.feels_like else None,
+                "alert_type": result.alert_data.alert_type if result.alert_data else None,
+                "alert_level": result.alert_data.alert_level if result.alert_data else None,
+                "alert_time": result.alert_data.alert_time if result.alert_data else None,
+            },
+        )
         session.commit()
         logger.info(f"分析结果已保存: {result.analysis_id}")
     except Exception as e:
@@ -68,6 +71,7 @@ def _save_analysis_result(feedback: FeedbackRequest, result: AnalysisResult):
         logger.error(f"保存分析结果失败: {e}")
     finally:
         session.close()
+
 
 router = APIRouter(prefix="/agent", tags=["Agent"])
 
@@ -94,10 +98,12 @@ async def _process_batch(batch_id: str, feedbacks: list[FeedbackRequest]):
         except Exception as e:
             logger.error(f"批量分析失败: {feedback.feedback_id}, error: {e}")
             failed += 1
-            results.append({
-                "feedback_id": feedback.feedback_id,
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "feedback_id": feedback.feedback_id,
+                    "error": str(e),
+                }
+            )
 
         # 更新进度
         batch_store[batch_id] = {

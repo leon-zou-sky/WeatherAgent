@@ -46,7 +46,7 @@ def main():
                 "SELECT DISTINCT weather_id, condition_zh FROM weather_icon ORDER BY weather_id"
             )
         ).fetchall()
-        print(f"\n天气映射:")
+        print("\n天气映射:")
         for r in result:
             print(f"  {r[0]}: {r[1]}")
 

@@ -20,9 +20,15 @@ async def test_index_query():
 
     # 查询所有指数
     result = get_all_indices("海淀", "2026-07-17")
-    print(f"\n海淀 2026-07-17 所有指数:")
-    for name, data in result.items():
-        print(f"  {name}: {data['level']} (分数{data['score']}) - {data['tip']}")
+    print("\n海淀 2026-07-17 所有指数:")
+
+    # 检查是否有错误
+    if "error" in result:
+        print(f"  查询失败: {result['error']}")
+    else:
+        for name, data in result.items():
+            if isinstance(data, dict):
+                print(f"  {name}: {data.get('level', 'N/A')} (分数{data.get('score', 'N/A')}) - {data.get('tip', 'N/A')}")
 
     # 查询单个指数
     result = get_index_data("海淀", "2026-07-17", "运动")
@@ -50,8 +56,8 @@ async def test_index_fc():
     print("指数 Function Calling 分析测试")
     print("=" * 50)
 
-    from app.models.schemas import FeedbackRequest
     from app.agent.core import get_agent
+    from app.models.schemas import FeedbackRequest
 
     agent = get_agent()
 

@@ -4,6 +4,7 @@
 """
 
 from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -60,9 +61,9 @@ class Settings(BaseSettings):
         return f"redis://{pwd}{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     # ---- 豆包大模型配置 (火山引擎 Ark) ----
-    ark_api_key: str = ""                    # Ark 控制台获取的 API Key
+    ark_api_key: str = ""  # Ark 控制台获取的 API Key
     ark_base_url: str = "https://ark.cn-beijing.volces.com/api/v3"  # Ark 接口地址
-    ark_model_endpoint: str = ""             # 推理接入点 ID，如 ep-20240xxx-xxxxx
+    ark_model_endpoint: str = ""  # 推理接入点 ID，如 ep-20240xxx-xxxxx
 
     # ---- Milvus 配置 ----
     milvus_host: str = "localhost"
@@ -75,10 +76,14 @@ class Settings(BaseSettings):
     # ---- 外部服务 ----
     weather_api_url: str = ""
     alert_api_url: str = ""
+    alert_api_token: str = ""
     notification_api_url: str = ""
 
+    # ---- 在意空气 AQI ----
+    air_matters_key: str = ""
 
-@lru_cache()
+
+@lru_cache
 def get_settings() -> Settings:
     """获取配置单例"""
     return Settings()

@@ -3,22 +3,22 @@ SQLAlchemy 数据库模型和连接管理
 """
 
 from datetime import datetime
-from sqlalchemy import (
-    Column, BigInteger, String, Text, DateTime, JSON, Index, create_engine
-)
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
+from sqlalchemy import JSON, BigInteger, Column, DateTime, Index, String, Text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from app.config import get_settings
 
-
 # ============ Base ============
+
 
 class Base(DeclarativeBase):
     pass
 
 
 # ============ 分析记录表 ============
+
 
 class AgentAnalysis(Base):
     __tablename__ = "agent_analysis"
@@ -49,6 +49,7 @@ class AgentAnalysis(Base):
 
 
 # ============ 知识库表 ============
+
 
 class AgentKnowledge(Base):
     __tablename__ = "agent_knowledge"

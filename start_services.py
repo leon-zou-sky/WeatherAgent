@@ -5,6 +5,7 @@ WeatherAgent 服务启动入口
 """
 
 import multiprocessing
+
 import uvicorn
 
 
@@ -20,7 +21,6 @@ def run_fastapi():
 
 def run_mcp_sse():
     """启动 MCP SSE 服务 (端口 9000)"""
-    from mcp.server.fastmcp import FastMCP
     from app.mcp.server import mcp
 
     # 覆盖 host/port 配置

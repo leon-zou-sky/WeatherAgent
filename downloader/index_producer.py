@@ -4,17 +4,17 @@
 用法: python -m downloader.index_producer
 """
 
-import os
 import json
 import logging
-from datetime import datetime, date
+import os
+from datetime import date, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import text
 
-from downloader.models import get_engine, get_session
 from app.skills.index_engine import IndexEngine, WeatherInput
+from downloader.models import get_engine, get_session
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.example")
 
@@ -36,7 +36,8 @@ def get_db_url():
 
 def get_weather_data(session, city_id: str, target_date: str) -> dict | None:
     """获取城市天气数据（从 weather_ff 逐天预报）"""
-    row = session.execute(text("""
+    row = session.execute(
+        text("""
         SELECT city_id, temp_high, temp_low, humidity_day,
                weather_day, wind_level_day
         FROM weather_ff
@@ -44,7 +45,9 @@ def get_weather_data(session, city_id: str, target_date: str) -> dict | None:
           AND predict_date LIKE :date
         ORDER BY created_at DESC
         LIMIT 1
-    """), {"cid": city_id, "date": f"{target_date}%"}).fetchone()
+    """),
+        {"cid": city_id, "date": f"{target_date}%"},
+    ).fetchone()
 
     if not row:
         return None
@@ -67,7 +70,7 @@ def get_weather_data(session, city_id: str, target_date: str) -> dict | None:
         "wind_level": wind_level,
         "condition": str(row[4]) if row[4] else "晴",
         "aqi": 50,  # 默认值，后续可接入 AQI 数据
-        "uvi": 3,   # 默认值，后续可接入 UVI 数据
+        "uvi": 3,  # 默认值，后续可接入 UVI 数据
         "latitude": 39.9,  # 默认北京纬度
         "month": datetime.strptime(target_date, "%Y-%m-%d").month,
     }
@@ -75,37 +78,47 @@ def get_weather_data(session, city_id: str, target_date: str) -> dict | None:
 
 def get_all_cities(session) -> list[dict]:
     """获取所有城市"""
-    rows = session.execute(text("""
+    rows = session.execute(
+        text("""
         SELECT city_id, city_name FROM city
-    """)).fetchall()
+    """)
+    ).fetchall()
     return [{"city_id": r[0], "city_name": r[1]} for r in rows]
 
 
-def save_indices(session, city_id: str, city_name: str, target_date: str, indices: dict, calc_input: dict):
+def save_indices(
+    session, city_id: str, city_name: str, target_date: str, indices: dict, calc_input: dict
+):
     """保存指数到数据库"""
     # 先删除旧数据
-    session.execute(text("""
+    session.execute(
+        text("""
         DELETE FROM live_index
         WHERE city_id = :cid AND index_date = :date
-    """), {"cid": city_id, "date": target_date})
+    """),
+        {"cid": city_id, "date": target_date},
+    )
 
     # 插入新数据
     for index_type, result in indices.items():
-        session.execute(text("""
+        session.execute(
+            text("""
             INSERT INTO live_index
             (city_id, city_name, index_date, index_type, level, score, tip, risk_factors, calc_input, created_at)
             VALUES (:city_id, :city_name, :index_date, :index_type, :level, :score, :tip, :risk_factors, :calc_input, NOW())
-        """), {
-            "city_id": city_id,
-            "city_name": city_name,
-            "index_date": target_date,
-            "index_type": index_type,
-            "level": result.level,
-            "score": result.score,
-            "tip": result.tip,
-            "risk_factors": json.dumps(result.risk_factors, ensure_ascii=False),
-            "calc_input": json.dumps(calc_input, ensure_ascii=False),
-        })
+        """),
+            {
+                "city_id": city_id,
+                "city_name": city_name,
+                "index_date": target_date,
+                "index_type": index_type,
+                "level": result.level,
+                "score": result.score,
+                "tip": result.tip,
+                "risk_factors": json.dumps(result.risk_factors, ensure_ascii=False),
+                "calc_input": json.dumps(calc_input, ensure_ascii=False),
+            },
+        )
 
 
 def produce_indices(target_date: str = None, city_ids: list[str] = None):
@@ -157,7 +170,7 @@ def produce_indices(target_date: str = None, city_ids: list[str] = None):
 
                 if (i + 1) % 500 == 0:
                     session.commit()
-                    logger.info(f"进度: {i+1}/{len(cities)}")
+                    logger.info(f"进度: {i + 1}/{len(cities)}")
 
             except Exception as e:
                 logger.error(f"处理失败: {city_id} {city_name}, error: {e}")

@@ -10,7 +10,7 @@ import httpx
 from dotenv import load_dotenv
 from sqlalchemy.dialects.mysql import insert
 
-from downloader.models import get_engine, get_session, City
+from downloader.models import City, get_engine, get_session
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.example")
 
@@ -26,10 +26,12 @@ def fetch_cities(api_key: str) -> list[dict]:
 
     cities = []
     for item in data["data"]:
-        cities.append({
-            "city_id": item["cityId"],
-            "city_name": item.get("cityName", ""),
-        })
+        cities.append(
+            {
+                "city_id": item["cityId"],
+                "city_name": item.get("cityName", ""),
+            }
+        )
     return cities
 
 

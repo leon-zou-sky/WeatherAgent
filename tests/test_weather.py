@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.skills.weather import query_weather_data, query_hourly_data, query_forecast_data
+from app.skills.weather import query_forecast_data, query_hourly_data, query_weather_data
 
 
 async def test_condition():
@@ -21,7 +21,7 @@ async def test_condition():
     locations = ["海淀", "北京", "101010200"]
     for loc in locations:
         result = await query_weather_data(loc)
-        print(f"\n查询: \"{loc}\"")
+        print(f'\n查询: "{loc}"')
         print(f"  城市: {result.city_name} ({result.city_id})")
         print(f"  温度: {result.temperature}℃")
         print(f"  湿度: {result.humidity}%")
@@ -36,7 +36,7 @@ async def test_hourly():
     print("=" * 50)
 
     results = await query_hourly_data("海淀", hours=6)
-    print(f"\n查询: \"海淀\" → {len(results)} 条")
+    print(f'\n查询: "海淀" → {len(results)} 条')
     for r in results:
         print(f"  {r.predict_time}: {r.temperature}℃ 湿度{r.humidity}%")
 
@@ -48,10 +48,12 @@ async def test_forecast():
     print("=" * 50)
 
     results = await query_forecast_data("海淀", days=5)
-    print(f"\n查询: \"海淀\" → {len(results)} 条")
+    print(f'\n查询: "海淀" → {len(results)} 条')
     for r in results:
-        print(f"  {r.predict_date}: {r.temp_low}~{r.temp_high}℃ "
-              f"白天{r.weather_day} 夜间{r.weather_night}")
+        print(
+            f"  {r.predict_date}: {r.temp_low}~{r.temp_high}℃ "
+            f"白天{r.weather_day} 夜间{r.weather_night}"
+        )
 
 
 async def main():

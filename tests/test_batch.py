@@ -3,7 +3,6 @@
 测试批量提交、进度查询、结果获取
 """
 
-import asyncio
 import sys
 import time
 from pathlib import Path
@@ -30,7 +29,9 @@ def test_batch_analyze():
 
     # 1. 提交批量任务
     print(f"\n1. 提交批量任务 ({len(feedbacks)} 条)")
-    resp = httpx.post(f"{BASE_URL}/api/v1/agent/batch-analyze", json={"feedbacks": feedbacks}, timeout=60)
+    resp = httpx.post(
+        f"{BASE_URL}/api/v1/agent/batch-analyze", json={"feedbacks": feedbacks}, timeout=60
+    )
     data = resp.json()
     batch_id = data["data"]["batch_id"]
     print(f"   batch_id: {batch_id}")
@@ -43,7 +44,7 @@ def test_batch_analyze():
         time.sleep(2)
         resp = httpx.get(f"{BASE_URL}/api/v1/agent/batch/{batch_id}", timeout=60)
         progress = resp.json()["data"]
-        print(f"   [{i+1}] progress: {progress['progress']}, status: {progress['status']}")
+        print(f"   [{i + 1}] progress: {progress['progress']}, status: {progress['status']}")
 
         if progress["status"] == "completed":
             break
@@ -63,7 +64,9 @@ def test_batch_analyze():
         if "error" in r:
             print(f"   - {r['feedback_id']}: ❌ {r['error']}")
         else:
-            print(f"   - {r['analysis_id']}: {r.get('feedback_type', '未知')} - {r.get('root_cause', '未知')[:50]}...")
+            print(
+                f"   - {r['analysis_id']}: {r.get('feedback_type', '未知')} - {r.get('root_cause', '未知')[:50]}..."
+            )
 
 
 def main():

@@ -4,14 +4,14 @@
 用法: python -m downloader.alert
 """
 
-import os
 import logging
+import os
 from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
 
-from downloader.models import get_engine, get_session, create_tables, AlertData
+from downloader.models import AlertData, create_tables, get_engine, get_session
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.example")
 

@@ -21,7 +21,7 @@ async def test_data_source():
     locations = ["海淀", "北京", "101010200", "不存在的城市"]
     for loc in locations:
         result = await check_data_source(loc)
-        print(f"\n查询: \"{loc}\"")
+        print(f'\n查询: "{loc}"')
         print(f"  状态: {result.status}")
         print(f"  质量: {result.data_quality}")
         print(f"  覆盖: {result.coverage}")
@@ -37,7 +37,7 @@ async def test_pipeline():
     locations = ["海淀", "不存在的城市"]
     for loc in locations:
         result = await check_pipeline(loc)
-        print(f"\n查询: \"{loc}\"")
+        print(f'\n查询: "{loc}"')
         print(f"  数据源: {result.data_source.status} - {result.data_source.detail}")
         print(f"  采集:   {result.collection.status} - {result.collection.detail}")
         print(f"  处理:   {result.processing.status} - {result.processing.detail}")

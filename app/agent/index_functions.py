@@ -4,14 +4,13 @@
 """
 
 import json
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import text
 
-from app.skills.index_engine import IndexEngine
 from app.skills.db import get_session
+from app.skills.index_engine import IndexEngine
 
 load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env.example")
 
@@ -29,23 +28,17 @@ INDEX_FUNCTIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "city": {
-                        "type": "string",
-                        "description": "城市名或城市编号"
-                    },
-                    "date": {
-                        "type": "string",
-                        "description": "日期，格式 YYYY-MM-DD"
-                    },
+                    "city": {"type": "string", "description": "城市名或城市编号"},
+                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"},
                     "index_type": {
                         "type": "string",
                         "description": "指数类型",
-                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"]
-                    }
+                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"],
+                    },
                 },
-                "required": ["city", "date", "index_type"]
-            }
-        }
+                "required": ["city", "date", "index_type"],
+            },
+        },
     },
     {
         "type": "function",
@@ -58,12 +51,12 @@ INDEX_FUNCTIONS = [
                     "index_type": {
                         "type": "string",
                         "description": "指数类型",
-                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"]
+                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"],
                     }
                 },
-                "required": ["index_type"]
-            }
-        }
+                "required": ["index_type"],
+            },
+        },
     },
     {
         "type": "function",
@@ -73,18 +66,12 @@ INDEX_FUNCTIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "city": {
-                        "type": "string",
-                        "description": "城市名或城市编号"
-                    },
-                    "date": {
-                        "type": "string",
-                        "description": "日期，格式 YYYY-MM-DD"
-                    }
+                    "city": {"type": "string", "description": "城市名或城市编号"},
+                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"},
                 },
-                "required": ["city", "date"]
-            }
-        }
+                "required": ["city", "date"],
+            },
+        },
     },
     {
         "type": "function",
@@ -94,23 +81,18 @@ INDEX_FUNCTIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "city": {
-                        "type": "string",
-                        "description": "城市名或城市编号"
-                    },
-                    "date": {
-                        "type": "string",
-                        "description": "日期，格式 YYYY-MM-DD"
-                    }
+                    "city": {"type": "string", "description": "城市名或城市编号"},
+                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"},
                 },
-                "required": ["city", "date"]
-            }
-        }
-    }
+                "required": ["city", "date"],
+            },
+        },
+    },
 ]
 
 
 # ============ Function 执行器 ============
+
 
 def _resolve_city_id(city: str) -> str | None:
     """城市名转 city_id"""
@@ -135,11 +117,14 @@ def get_index_data(city: str, date: str, index_type: str) -> dict:
 
     session = get_session()
     try:
-        row = session.execute(text("""
+        row = session.execute(
+            text("""
             SELECT city_id, city_name, index_date, index_type, level, score, tip, risk_factors
             FROM live_index
             WHERE city_id = :cid AND index_date = :date AND index_type = :type
-        """), {"cid": city_id, "date": date, "type": index_type}).fetchone()
+        """),
+            {"cid": city_id, "date": date, "type": index_type},
+        ).fetchone()
 
         if not row:
             return {"error": f"未找到指数数据: {city} {date} {index_type}"}
@@ -175,23 +160,29 @@ def get_weather_for_index(city: str, date: str) -> dict:
     session = get_session()
     try:
         # 从 live_index 的 calc_input 获取
-        row = session.execute(text("""
+        row = session.execute(
+            text("""
             SELECT calc_input
             FROM live_index
             WHERE city_id = :cid AND index_date = :date
             LIMIT 1
-        """), {"cid": city_id, "date": date}).fetchone()
+        """),
+            {"cid": city_id, "date": date},
+        ).fetchone()
 
         if row and row[0]:
             return json.loads(row[0])
 
         # 从 weather_ff 获取
-        row = session.execute(text("""
+        row = session.execute(
+            text("""
             SELECT city_id, temp_high, temp_low, humidity_day, weather_day, wind_level_day
             FROM weather_ff
             WHERE city_id = :cid AND predict_date LIKE :date
             ORDER BY created_at DESC LIMIT 1
-        """), {"cid": city_id, "date": f"{date}%"}).fetchone()
+        """),
+            {"cid": city_id, "date": f"{date}%"},
+        ).fetchone()
 
         if not row:
             return {"error": f"未找到天气数据: {city} {date}"}
@@ -217,11 +208,14 @@ def get_all_indices(city: str, date: str) -> dict:
 
     session = get_session()
     try:
-        rows = session.execute(text("""
+        rows = session.execute(
+            text("""
             SELECT index_type, level, score, tip, risk_factors
             FROM live_index
             WHERE city_id = :cid AND index_date = :date
-        """), {"cid": city_id, "date": date}).fetchall()
+        """),
+            {"cid": city_id, "date": date},
+        ).fetchall()
 
         if not rows:
             return {"error": f"未找到指数数据: {city} {date}"}

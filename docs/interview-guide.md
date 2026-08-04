@@ -176,7 +176,7 @@ TEST_CASES = [
     {"query": "温度比预报高5度", "expected_module": "实况"},
     {"query": "没收到预警", "expected_module": "天气预警"},
     {"query": "热死了", "expected_module": "实况"},
-    ...
+    ...,
 ]
 
 # 评估逻辑
@@ -1187,6 +1187,7 @@ async def submit_feedback(feedback):
     # 立即返回分析 ID
     return {"analysis_id": analysis_id, "status": "queued"}
 
+
 # 消费者：从队列取数据处理
 async def consume_feedback():
     async for message in kafka.consume("feedback_topic"):
@@ -1255,6 +1256,7 @@ def get_priority(feedback):
         return "medium"  # 数据偏差
     else:
         return "low"  # 其他
+
 
 # 高优先级反馈发到独立 Topic，优先消费
 if priority == "high":
@@ -1438,10 +1440,10 @@ LLM 生成: 统计报告 + 处理建议
 ```python
 class VeevaMedicalAssistant:
     def __init__(self):
-        self.milvus = MilvusClient()      # 医学文献向量库
-        self.es = Elasticsearch()          # 药品说明书、法规文档
-        self.neo4j = Neo4jClient()        # 药物-疾病-不良反应图谱
-        self.llm = LLMService()           # 豆包大模型
+        self.milvus = MilvusClient()  # 医学文献向量库
+        self.es = Elasticsearch()  # 药品说明书、法规文档
+        self.neo4j = Neo4jClient()  # 药物-疾病-不良反应图谱
+        self.llm = LLMService()  # 豆包大模型
 
     async def query(self, question, context):
         # 1. 实体提取
@@ -1595,11 +1597,11 @@ LLM 生成审核意见:
 ```python
 class FinancialPlanningAssistant:
     def __init__(self):
-        self.milvus = MilvusClient()      # 规划案例向量库
-        self.es = Elasticsearch()          # 税法条款、产品信息
-        self.neo4j = Neo4jClient()        # 税务规则、投资关系图谱
-        self.llm = LLMService()           # 豆包大模型
-        self.calc = TaxCalculator()       # 税务计算引擎
+        self.milvus = MilvusClient()  # 规划案例向量库
+        self.es = Elasticsearch()  # 税法条款、产品信息
+        self.neo4j = Neo4jClient()  # 税务规则、投资关系图谱
+        self.llm = LLMService()  # 豆包大模型
+        self.calc = TaxCalculator()  # 税务计算引擎
 
     async def plan_retirement(self, client_profile):
         age = client_profile["age"]
@@ -1614,17 +1616,19 @@ class FinancialPlanningAssistant:
         """)
 
         # 2. ES 检索类似案例
-        cases = await self.es.search({
-            "query": {
-                "bool": {
-                    "must": [{"match": {"type": "retirement_plan"}}],
-                    "filter": [
-                        {"range": {"client_age": {"gte": age-5, "lte": age+5}}},
-                        {"range": {"assets": {"gte": assets*0.8, "lte": assets*1.2}}},
-                    ]
+        cases = await self.es.search(
+            {
+                "query": {
+                    "bool": {
+                        "must": [{"match": {"type": "retirement_plan"}}],
+                        "filter": [
+                            {"range": {"client_age": {"gte": age - 5, "lte": age + 5}}},
+                            {"range": {"assets": {"gte": assets * 0.8, "lte": assets * 1.2}}},
+                        ],
+                    }
                 }
             }
-        })
+        )
 
         # 3. 计算税务影响
         tax_impact = self.calc.calculate_retirement_tax(
@@ -1634,7 +1638,7 @@ class FinancialPlanningAssistant:
         # 4. LLM 生成建议
         return await self.llm.generate(
             f"客户{age}岁，资产{assets}万，想{target_age}岁退休",
-            context={"rules": rules, "cases": cases, "tax_impact": tax_impact}
+            context={"rules": rules, "cases": cases, "tax_impact": tax_impact},
         )
 ```
 

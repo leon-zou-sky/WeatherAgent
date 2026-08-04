@@ -3,14 +3,14 @@
 从北京局 v2 接口下载实况、逐时、逐天数据
 """
 
-import time
 import datetime
 import logging
+import time
 
 import httpx
 
-from downloader.models import WeatherCondition, WeatherHourly, WeatherForecast
 from app.skills.weather_codes import get_weather_name
+from downloader.models import WeatherCondition, WeatherForecast, WeatherHourly
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,7 @@ def fetch_json(url: str, timeout: int = 30) -> dict | None:
 
 # ============ 实况数据解析 ============
 
+
 def fetch_condition(api_key: str) -> list[WeatherCondition]:
     """抓取实况数据"""
     url = BASE_URL + API_PATHS["condition"].format(key=api_key)
@@ -103,6 +104,7 @@ def fetch_condition(api_key: str) -> list[WeatherCondition]:
 
 
 # ============ 逐时预报解析 ============
+
 
 def fetch_hourly(api_key: str) -> list[WeatherHourly]:
     """抓取逐时预报"""
@@ -148,6 +150,7 @@ def fetch_hourly(api_key: str) -> list[WeatherHourly]:
 
 
 # ============ 逐天预报解析 ============
+
 
 def fetch_forecast(api_key: str) -> list[WeatherForecast]:
     """抓取15天预报"""

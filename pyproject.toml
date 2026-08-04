@@ -1,0 +1,110 @@
+[project]
+name = "weather-agent"
+version = "1.0.0"
+description = "气象负反馈分析 Agent"
+requires-python = ">=3.11"
+
+# ============ Ruff 配置 ============
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+fix = true
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T20", # flake8-print
+    "RET", # flake8-return
+    "PTH", # flake8-use-pathlib
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "SIM108", # use ternary operator (less readable)
+    "T201",   # print found (允许在scripts中使用print)
+    "DTZ005", # datetime.now() without timezone (项目使用本地时间)
+    "DTZ007", # strptime without %z (项目使用本地时间)
+    "DTZ011", # date.today() (项目使用本地时间)
+    "PTH123", # open() should be Path.open() (保持代码简洁)
+    "PTH120", # os.path.dirname() should be Path.parent (保持兼容性)
+    "PTH100", # os.path.abspath() should be Path.resolve() (保持兼容性)
+    "PTH110", # os.path.exists() should be Path.exists() (保持兼容性)
+    "N806",   # variable should be lowercase (数学公式使用大写变量)
+    "N815",   # variable in class scope should not be mixedCase (保持兼容性)
+    "E722",   # bare except (部分代码需要)
+    "E741",   # ambiguous variable name (部分代码使用)
+    "B904",   # raise ... from (部分代码需要)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T20", "B"]
+"scripts/*" = ["T20"]
+"downloader/*" = ["T20"]
+"*.py" = ["T20"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "downloader"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# ============ Mypy 配置 ============
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false  # 暂时关闭，逐步开启
+check_untyped_defs = true
+
+# ============ Pytest 配置 ============
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+python_classes = ["Test*"]
+asyncio_mode = "auto"
+markers = [
+    "unit: 单元测试",
+    "integration: 集成测试",
+    "e2e: 端到端测试",
+    "slow: 慢速测试",
+]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+
+# ============ Coverage 配置 ============
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "tests/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.",
+    "raise NotImplementedError",
+    "pass",
+    "except Exception",
+]
+fail_under = 80
+show_missing = true

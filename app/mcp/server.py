@@ -7,7 +7,6 @@ WeatherAgent MCP Server
   运营用：check_pipeline / get_monitor_overview
 """
 
-import json
 import logging
 from datetime import datetime
 
@@ -76,8 +75,7 @@ async def query_aqi(city: str, time: str = "") -> dict:
     from app.skills.aqi import query_aqi_data
 
     logger.info(f"[MCP] query_aqi: city={city}, time={time}")
-    result = await query_aqi_data(city, time)
-    return result
+    return await query_aqi_data(city, time)
 
 
 @mcp.tool()
@@ -92,7 +90,7 @@ async def get_life_index(city: str, date: str = "", index_type: str = "") -> dic
         date: 查询日期，格式 YYYY-MM-DD，默认当天
         index_type: 指数类型，可选值：穿衣/紫外线/中暑/感冒/运动/舒适度/出行，为空则返回全部指数
     """
-    from app.agent.index_functions import get_index_data, get_all_indices
+    from app.agent.index_functions import get_all_indices, get_index_data
 
     logger.info(f"[MCP] get_life_index: city={city}, date={date}, index_type={index_type}")
 
@@ -126,9 +124,7 @@ async def search_knowledge(query: str, top_k: int = 3) -> list[dict]:
 
 
 @mcp.tool()
-async def analyze_feedback(
-    content: str, location: str = "", time: str = ""
-) -> dict:
+async def analyze_feedback(content: str, location: str = "", time: str = "") -> dict:
     """分析气象负反馈，自动判断问题类型并生成分析报告
 
     自动分析用户反馈内容，判断问题类型（数据偏差/时空误差/时效延迟/认知偏差/体验缺陷），
@@ -187,7 +183,7 @@ async def get_monitor_overview(hours: int = 24) -> dict:
     Args:
         hours: 统计时间范围（小时），默认24小时
     """
-    from app.api.v1.endpoints.alert_monitor import _get_stats, _detect_anomalies
+    from app.api.v1.endpoints.alert_monitor import _detect_anomalies, _get_stats
 
     logger.info(f"[MCP] get_monitor_overview: hours={hours}")
     stats = _get_stats(hours)

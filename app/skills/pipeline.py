@@ -5,7 +5,7 @@ Skill 2: 链路检查
 
 from sqlalchemy import text
 
-from app.models.schemas import PipelineStepResult, PipelineResult
+from app.models.schemas import PipelineResult, PipelineStepResult
 from app.skills.db import get_session
 
 

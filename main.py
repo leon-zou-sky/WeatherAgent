@@ -8,6 +8,7 @@
 """
 
 import uvicorn
+
 from app.config import get_settings
 
 if __name__ == "__main__":

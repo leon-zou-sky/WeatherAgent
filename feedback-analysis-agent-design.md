@@ -260,7 +260,9 @@ async def query_alert_data(location: str, time: str) -> AlertData:
 #### Skill 5：体感温度计算
 
 ```python
-async def calculate_feels_like(temperature: float, humidity: float, wind_speed: float) -> FeelsLikeResult:
+async def calculate_feels_like(
+    temperature: float, humidity: float, wind_speed: float
+) -> FeelsLikeResult:
     """
     计算体感温度
     算法：风寒指数（低温+大风）+ 热指数（高温+高湿）
@@ -328,12 +330,12 @@ INDEX_FUNCTIONS = [
                     "index_type": {
                         "type": "string",
                         "description": "指数类型",
-                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"]
-                    }
+                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"],
+                    },
                 },
-                "required": ["city", "date", "index_type"]
-            }
-        }
+                "required": ["city", "date", "index_type"],
+            },
+        },
     },
     {
         "type": "function",
@@ -346,12 +348,12 @@ INDEX_FUNCTIONS = [
                     "index_type": {
                         "type": "string",
                         "description": "指数类型",
-                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"]
+                        "enum": ["穿衣", "紫外线", "中暑", "感冒", "运动", "舒适度", "出行"],
                     }
                 },
-                "required": ["index_type"]
-            }
-        }
+                "required": ["index_type"],
+            },
+        },
     },
     {
         "type": "function",
@@ -362,11 +364,11 @@ INDEX_FUNCTIONS = [
                 "type": "object",
                 "properties": {
                     "city": {"type": "string", "description": "城市名或城市编号"},
-                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"}
+                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"},
                 },
-                "required": ["city", "date"]
-            }
-        }
+                "required": ["city", "date"],
+            },
+        },
     },
     {
         "type": "function",
@@ -377,12 +379,12 @@ INDEX_FUNCTIONS = [
                 "type": "object",
                 "properties": {
                     "city": {"type": "string", "description": "城市名或城市编号"},
-                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"}
+                    "date": {"type": "string", "description": "日期，格式 YYYY-MM-DD"},
                 },
-                "required": ["city", "date"]
-            }
-        }
-    }
+                "required": ["city", "date"],
+            },
+        },
+    },
 ]
 ```
 
@@ -843,7 +845,7 @@ TEST_CASES = [
     {"query": "未来两小时预报不准", "expected_module": "逐小时预报"},
     {"query": "暴雨预警迟了半小时", "expected_module": "天气预警"},
     {"query": "AQI不准", "expected_module": "空气质量"},
-    ...
+    ...,
 ]
 ```
 

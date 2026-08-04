@@ -37,7 +37,7 @@ def read_xlsx(path: Path) -> list[dict]:
 
     rows = []
     for row in ws.iter_rows(min_row=2, values_only=True):
-        record = dict(zip(headers, row))
+        record = dict(zip(headers, row, strict=False))
         rows.append(record)
 
     wb.close()

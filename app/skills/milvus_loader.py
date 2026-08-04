@@ -6,7 +6,7 @@ CSV 数据导入 Milvus
 import csv
 from pathlib import Path
 
-from pymilvus import MilvusClient, DataType
+from pymilvus import DataType, MilvusClient
 
 # 配置
 _CSV_PATH = Path(__file__).resolve().parent.parent.parent / "weather_feedback_enriched_v3.csv"
@@ -72,7 +72,7 @@ def load_csv(client: MilvusClient, embed_fn):
         return
 
     rows = []
-    with open(_CSV_PATH, "r", encoding="utf-8") as f:
+    with open(_CSV_PATH, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             rows.append(row)
@@ -87,16 +87,18 @@ def load_csv(client: MilvusClient, embed_fn):
     # 组装数据
     data = []
     for i, row in enumerate(rows):
-        data.append({
-            "module": row.get("module", ""),
-            "problem_pattern": row.get("problem_pattern", ""),
-            "problem_desc": row.get("problem_desc", ""),
-            "root_cause": row.get("root_cause", ""),
-            "solution": row.get("solution", ""),
-            "tags": row.get("tags", ""),
-            "severity": row.get("severity", ""),
-            "embedding": embeddings[i],
-        })
+        data.append(
+            {
+                "module": row.get("module", ""),
+                "problem_pattern": row.get("problem_pattern", ""),
+                "problem_desc": row.get("problem_desc", ""),
+                "root_cause": row.get("root_cause", ""),
+                "solution": row.get("solution", ""),
+                "tags": row.get("tags", ""),
+                "severity": row.get("severity", ""),
+                "embedding": embeddings[i],
+            }
+        )
 
     # 批量写入
     client.insert(collection_name=_COLLECTION, data=data)
