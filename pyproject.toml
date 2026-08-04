@@ -9,6 +9,7 @@ requires-python = ">=3.11"
 line-length = 100
 target-version = "py311"
 fix = true
+exclude = ["test_file", "models"]
 
 [tool.ruff.lint]
 select = [

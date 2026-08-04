@@ -3,6 +3,7 @@ AQI 单元测试 - 不需要数据库连接
 """
 
 import pytest
+
 from downloader.aqi_downloader import (
     calculate_iaqi,
     get_aqi_description,

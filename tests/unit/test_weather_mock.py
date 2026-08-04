@@ -3,8 +3,9 @@
 使用 Mock 模拟数据库查询
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
 
 
 @pytest.mark.unit

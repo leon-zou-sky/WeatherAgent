@@ -8,12 +8,11 @@ from pydantic import ValidationError
 
 from app.models.schemas import (
     FeedbackRequest,
-    WeatherData,
-    HourlyData,
-    ForecastData,
     FeelsLikeResult,
+    ForecastData,
+    HourlyData,
+    WeatherData,
 )
-
 
 # ============ FeedbackRequest 测试 ============
 

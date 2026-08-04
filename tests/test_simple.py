@@ -53,5 +53,5 @@ class TestDataStructures:
 
     def test_dict_keys(self):
         my_dict = {"x": 10, "y": 20}
-        assert "x" in my_dict.keys()
+        assert "x" in my_dict
         assert 20 in my_dict.values()

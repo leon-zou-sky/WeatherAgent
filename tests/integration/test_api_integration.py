@@ -131,6 +131,7 @@ class TestDataValidation:
     def test_feedback_validation(self):
         """测试反馈数据验证"""
         from pydantic import ValidationError
+
         from app.models.schemas import FeedbackRequest
 
         # 有效数据

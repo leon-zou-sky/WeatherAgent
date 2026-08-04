@@ -8,7 +8,6 @@ import pytest
 # 导入需要测试的函数
 from app.skills.weather_codes import get_weather_name
 
-
 # ============ 风向转换测试 ============
 
 
