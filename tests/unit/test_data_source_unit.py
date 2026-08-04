@@ -3,8 +3,9 @@
 测试数据源状态检查逻辑
 """
 
-import pytest
+from datetime import UTC
 
+import pytest
 
 # ============ 数据源状态测试 ============
 
@@ -98,9 +99,9 @@ class TestDataSourceHealth:
 
     def test_data_freshness(self):
         """测试数据新鲜度"""
-        from datetime import datetime, timedelta
-        last_update = datetime(2024, 1, 15, 10, 0, 0)
-        current_time = datetime(2024, 1, 15, 12, 0, 0)
+        from datetime import datetime
+        last_update = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         freshness = (current_time - last_update).total_seconds() / 3600
         assert freshness == 2.0  # 2小时前更新
         assert freshness < 24  # 24小时内算新鲜

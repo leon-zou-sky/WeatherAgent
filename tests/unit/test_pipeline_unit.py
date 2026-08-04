@@ -3,8 +3,9 @@
 测试数据链路检查逻辑
 """
 
-import pytest
+from datetime import UTC
 
+import pytest
 
 # ============ 链路状态测试 ============
 
@@ -105,8 +106,8 @@ class TestTimeCheck:
     def test_delay_calculation(self):
         """测试延迟计算"""
         from datetime import datetime
-        update_time = datetime(2024, 1, 15, 10, 0, 0)
-        current_time = datetime(2024, 1, 15, 12, 0, 0)
+        update_time = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
+        current_time = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         delay = (current_time - update_time).total_seconds() / 3600
         assert delay == 2.0  # 2小时延迟
 

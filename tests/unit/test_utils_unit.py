@@ -3,9 +3,9 @@
 测试通用工具函数和辅助方法
 """
 
-import pytest
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
+import pytest
 
 # ============ 数值验证测试 ============
 
@@ -119,7 +119,7 @@ class TestDateTime:
 
     def test_date_arithmetic(self):
         """测试日期运算"""
-        base_date = datetime(2024, 1, 15)
+        base_date = datetime(2024, 1, 15, tzinfo=UTC)
         next_day = base_date + timedelta(days=1)
         assert next_day.day == 16
 
